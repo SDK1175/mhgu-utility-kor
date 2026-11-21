@@ -1,6 +1,6 @@
 #![no_std]
 extern crate alloc;
-mod ko;mod ko_ks;mod ko_dict;mod ko_keys{include!(concat!(env!("OUT_DIR"),"/ko_keys.rs"));}
+mod hangul;mod ko;mod ko_ks;mod ko_dict;mod ko_keys{include!(concat!(env!("OUT_DIR"),"/ko_keys.rs"));}
 mod gather;mod gather_map;mod gather_filter;mod gather_menu;mod gather_zones;mod start_menu;
 mod skill_text;mod set_builder;mod set_skills;mod set_solver;mod set_player;mod set_unlock;mod set_data{include!(concat!(env!("OUT_DIR"),"/set_data.rs"));}
 mod settings;mod storage;mod editor;mod game_ui;mod game_ui_data{include!(concat!(env!("OUT_DIR"),"/game_ui.rs"));}mod quest;mod quest_data {include!(concat!(env!("OUT_DIR"),"/quest_data.rs"));}mod search;mod armor_preview;mod armor;mod armor_data { include!(concat!(env!("OUT_DIR"),"/armor_data.rs")); }mod quick_map;mod inventory;mod wishlist;mod native_hint;mod smithy;mod item;mod item_data { include!(concat!(env!("OUT_DIR"),"/item_data.rs")); }mod ui_art;mod ui_pixels { include!(concat!(env!("OUT_DIR"),"/ui_pixels.rs")); }mod weapon;mod weapon_data { include!(concat!(env!("OUT_DIR"),"/weapon_data.rs")); }mod map_art;mod map_pixels { include!(concat!(env!("OUT_DIR"),"/map_pixels.rs")); }mod layout;mod desktop;mod control;mod input;mod catalog { include!(concat!(env!("OUT_DIR"),"/catalog.rs")); }mod world { include!(concat!(env!("OUT_DIR"),"/world.rs")); }mod context;mod view;
@@ -18,10 +18,18 @@ impl Text{fn new()->Self{Self{bytes:[0;256],len:0}}fn str(&self)->&str{core::str
 impl Write for Text{fn write_str(&mut self,s:&str)->fmt::Result{let mut n=s.len().min(256-self.len);while !s.is_char_boundary(n){n-=1;}self.bytes[self.len..self.len+n].copy_from_slice(&s.as_bytes()[..n]);self.len+=n;Ok(())}}
 #[unsafe(no_mangle)]pub extern "C" fn forge_onLoad(p:*mut forge::sys::init::PluginInitParams){unsafe{(*p).required_version=forge::REQUIRED_VERSION;let n=b"MHGU Utility\0";core::ptr::copy_nonoverlapping(n.as_ptr(),(p as *mut u8).add(6),n.len());}}
 #[unsafe(no_mangle)]pub extern "C" fn forge_onInit(){let _=forge::log::init();if input::install(){native_hint::install();smithy::install();armor_preview::install();gather_map::install();start_menu::install();forge::log::prelude::info!("MHGU Utility 0.3 ready: Items / Weapons / Armor / Wishlist / Quest routes");}else{forge::log::prelude::error!("MHGU Utility disabled: HID imports incompatible");}}
+// Korean fork: letters, digits and Hangul count; a query matches the English name or the game's Korean one. A lone
+// consonant (ㄹ) matches a syllable starting with it, so initials search (ㄹㅇㅅ) and a syllable still being typed work.
+fn letters(s:&str,out:&mut[char])->usize{let mut n=0;for ch in s.chars(){if n==out.len(){break;}let c=if ch.is_ascii_alphanumeric(){ch.to_ascii_lowercase()}else if matches!(ch as u32,0xAC00..=0xD7A3|0x3131..=0x318E){ch}else{continue};out[n]=c;n+=1;}n}
+fn contains(hay:&[char],q:&[char])->bool{let eq=|q:char,h:char|q==h||hangul::consonant(q)&&hangul::initial(h)==Some(q);q.len()<=hay.len()&&hay.windows(q.len()).any(|w|w.iter().zip(q).all(|(&h,&q)|eq(q,h)))}
 fn query_match(s:&str,u:&Ui)->bool{
- let mut query=[0;48];let mut n=0;for &b in &u.query[..u.len]{if b.is_ascii_alphanumeric(){query[n]=b.to_ascii_lowercase();n+=1;}}if n==0{return true;}
- let mut hay=[0u8;256];let mut len=0;for &b in s.as_bytes(){if b.is_ascii_alphanumeric()&&len<hay.len(){hay[len]=b.to_ascii_lowercase();len+=1;}}
- hay[..len].windows(n).any(|part|part==&query[..n])
+ let mut q=['\0';49];let n=letters(core::str::from_utf8(&u.query[..u.len]).unwrap_or(""),&mut q[..48]);if n==0{return true;}
+ let mut hay=['\0';256];
+ let mut found=|q:&[char]|{for t in [s,ko::tr(s)]{let len=letters(t,&mut hay);if contains(&hay[..len],q){return true;}}false};
+ if found(&q[..n]){return true;}
+ // "렝" typed on the way to "레우스": the final consonant may be the next syllable's initial
+ if let Some((base,next))=hangul::split_final(q[n-1]){q[n-1]=base;q[n]=next;return found(&q[..n+1]);}
+ false
 }
 fn location_available(id:usize,rank:u8)->bool{
  // These encounter arenas are excluded from the gathering browser.
@@ -29,7 +37,7 @@ fn location_available(id:usize,rank:u8)->bool{
  world::QUESTS.iter().any(|&(_,loc,r)|loc as usize==id&&r==rank)&&world::GATHER.iter().any(|r|r.loc as usize==id&&r.rank==rank&&!r.supply)
 }
 fn rebuild(u:&mut Ui){if !u.dirty{return;}u.count=0;
- if u.builder&&u.detail==usize::MAX{for(i,a)in set_data::ACTIVATIONS.iter().enumerate(){if a.points>0&&query_match(a.name,u){u.results[u.count]=i as u16;u.count+=1;}}u.results[..u.count].sort_unstable_by_key(|&i|set_data::ACTIVATIONS[i as usize].name);u.selected=u.selected.min(u.count.saturating_sub(1));u.dirty=false;return;}
+ if u.builder&&u.detail==usize::MAX{for(i,a)in set_data::ACTIVATIONS.iter().enumerate(){if a.points>0&&query_match(a.name,u){u.results[u.count]=i as u16;u.count+=1;}}u.results[..u.count].sort_unstable_by(|&a,&b|ko::tr(set_data::ACTIVATIONS[a as usize].name).cmp(ko::tr(set_data::ACTIVATIONS[b as usize].name)));u.selected=u.selected.min(u.count.saturating_sub(1));u.dirty=false;return;}
 
  if u.quick_map&&u.location>=0&&!location_available(u.location as usize,u.rank){u.zone_count=0;u.selected=0;u.dirty=false;return;}
  if u.tab==2&&u.location>=0&&!location_available(u.location as usize,u.rank){u.location=-1;u.zone=0;u.selected=0;u.detail=usize::MAX;u.depth=0;}
@@ -38,7 +46,9 @@ fn rebuild(u:&mut Ui){if !u.dirty{return;}u.count=0;
   u.zone=u.zone.min(u.zone_count.saturating_sub(1));
  }
  match u.tab{
-  0=>if u.item_category<0&&u.len==0{for i in 0..item_data::CATEGORIES.len(){u.results[u.count]=i as u16;u.count+=1;}}else{for (i,e) in catalog::ENTRIES.iter().enumerate(){if e.kind==0&&(u.len>0||item_data::CATEGORY[i]as i16==u.item_category)&&query_match(e.name,u){u.results[u.count]=i as u16;u.count+=1;}}},
+  0=>if u.item_category<0&&u.len==0{for i in 0..item_data::CATEGORIES.len(){u.results[u.count]=i as u16;u.count+=1;}}else{for (i,e) in catalog::ENTRIES.iter().enumerate(){if e.kind==0&&(u.len>0||item_data::CATEGORY[i]as i16==u.item_category)&&query_match(e.name,u){u.results[u.count]=i as u16;u.count+=1;}}
+   // Korean fork: in Korean (가나다) order
+   u.results[..u.count].sort_unstable_by(|&a,&b|ko::tr(catalog::ENTRIES[a as usize].name).cmp(ko::tr(catalog::ENTRIES[b as usize].name)));},
   1=>if u.weapon<0{for (i,name) in world::CLASSES.iter().enumerate(){if query_match(name,u){u.results[u.count]=i as u16;u.count+=1;}}}else{for (i,n) in world::TREE.iter().enumerate(){if n.kind as i16==u.weapon&&query_match(n.name,u){u.results[u.count]=i as u16;u.count+=1;}}},
   3=>{for (i,w) in wishlist::entries().iter().enumerate(){if query_match(wishlist::name(w.node),u){u.results[u.count]=i as u16;u.count+=1;}}},
   4=>{if u.armor_slot==-1&&u.len==0{for i in 0..6{u.results[u.count]=i;u.count+=1;}}else{for(i,a)in armor_data::ARMOR.iter().enumerate(){if (u.armor_rank<0||armor::rank(a)==u.armor_rank)&&(u.armor_hunter<0||a.hunter==2||a.hunter as i8==u.armor_hunter)&&(u.armor_gender<0||a.gender==2||a.gender as i8==u.armor_gender)&&(if u.armor_slot==-2{a.leader}else{u.len>0||a.slot as i16==u.armor_slot})&&(query_match(a.name,u)||u.armor_slot==-2&&query_match(armor::set_name(a),u)){u.results[u.count]=i as u16;u.count+=1;}}}},

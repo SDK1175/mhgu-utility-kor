@@ -21,6 +21,8 @@ rustc +nightly --edition 2024 --test src/control.rs -o ../build/control-tests
 ../build/control-tests
 rustc +nightly --edition 2024 --test src/inventory.rs -o ../build/inventory-tests
 ../build/inventory-tests
+rustc +nightly --edition 2024 --test src/hangul.rs -o ../build/hangul-tests
+../build/hangul-tests
 rustc +nightly --edition 2024 --test ../tests/gather.rs -o ../build/gather-tests
 ../build/gather-tests
 rustc +nightly --edition 2024 --test ../tests/gather_filter.rs -o ../build/gather-filter-tests

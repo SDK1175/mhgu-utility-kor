@@ -4,6 +4,8 @@ impl Editor{
  pub const fn new()->Self{Self{cursor:0,anchor:0}}
  pub fn selection(&self)->(usize,usize){(self.cursor.min(self.anchor),self.cursor.max(self.anchor))}
  fn move_to(&mut self,pos:usize,select:bool){self.cursor=pos;if !select{self.anchor=pos;}}
+ /// Korean fork: select the `n` bytes before the caret (the syllable being typed), for insert to replace.
+ pub fn select_back(&mut self,n:usize){self.anchor=self.cursor.saturating_sub(n);}
  pub fn home(&mut self,select:bool){self.move_to(0,select);}
  pub fn end(&mut self,len:usize,select:bool){self.move_to(len,select);}
  pub fn select_all(&mut self,len:usize){self.anchor=0;self.cursor=len;}
