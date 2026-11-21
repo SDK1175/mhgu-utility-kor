@@ -80,7 +80,7 @@ def main():
             continue
         rel = path.relative_to(eng).as_posix()[:-len('_eng.gmd')] + '_jpn.gmd'
         found = [(i, s) for i, s in enumerate(rows) if s in wanted and s not in keys]
-        if not found or len(files) == 255:
+        if not found:
             continue
         for i, s in found:
             keys[s] = (len(files), i)

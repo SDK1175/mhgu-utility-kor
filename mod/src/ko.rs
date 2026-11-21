@@ -94,8 +94,15 @@ fn load(n: &mut Names) {
     n.pool = Vec::with_capacity(keys::POOL);
     let mut files = 0;
     let mut names = 0;
+    let mut missing = 0;
     for (f, paths) in keys::FILES.iter().enumerate() {
-        let Some(data) = paths.iter().find_map(|p| read(p)) else { continue };
+        let Some(data) = paths.iter().find_map(|p| read(p)) else {
+            if missing < 8 {
+                info!("Korean: no {} in the game", paths[0]);
+            }
+            missing += 1;
+            continue;
+        };
         let Some((body, count)) = strings(&data) else { continue };
         files += 1;
         let want = keys::BY_FILE[f];

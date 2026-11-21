@@ -5,7 +5,7 @@ static RANGES:&[u16]=&[32,383,0x2014,0x2015,0x2019,0x2019,0x2026,0x2026,0x2190,0
 static mut FONT:*mut sys::ImFont=core::ptr::null_mut();
 // Korean fork: Paperlogy's Hangul (SIL OFL 1.1, licenses/Paperlogy-OFL.txt) merged into the game glyphs.
 static KO_FONT:&[u8]=include_bytes!("../assets/paperlogy-ko.ttf");
-static KO_RANGES:&[u16]=&[0x3131,0x318E,0xAC00,0xD7A3,0];
+static KO_RANGES:&[u16]=&[0xB7,0xB7,0x3131,0x318E,0xAC00,0xD7A3,0];
 const KO_ADVANCE:f32=792.0/1060.0;
 
 #[unsafe(no_mangle)]pub extern "C" fn forge_onImGuiInit(_: *mut core::ffi::c_void,_: *mut core::ffi::c_void,_: *mut core::ffi::c_void){unsafe{

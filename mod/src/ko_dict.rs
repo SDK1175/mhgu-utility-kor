@@ -240,6 +240,7 @@ pub static DICT: &[(&str, &str)] = &[
     ("Remove", "빼기"),
     ("Remove from wishlist", "위시리스트에서 빼기"),
     ("Right stick rotates", "오른쪽 스틱: 회전"),
+    ("Scraps", "잡동사니"),
     ("Search", "검색"),
     ("Search complete. Ranked by activated skills.", "검색 완료. 발동 스킬 순입니다."),
     ("Search complete: no matching build.", "검색 완료: 맞는 조합이 없습니다."),
