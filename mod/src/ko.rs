@@ -95,6 +95,7 @@ fn load(n: &mut Names) {
     let mut files = 0;
     let mut names = 0;
     let mut missing = 0;
+    let mut japanese = 0;
     for (f, paths) in keys::FILES.iter().enumerate() {
         let Some(data) = paths.iter().find_map(|p| read(p)) else {
             if missing < 8 {
@@ -126,11 +127,12 @@ fn load(n: &mut Names) {
                     }
                 } else {
                     n.pool.truncate(start);
+                    japanese += 1;
                 }
             }
         }
     }
-    info!("Korean: {names} game names from {files} of {} tables", keys::FILES.len());
+    info!("Korean: {names} game names from {files} of {} tables ({japanese} not Korean: the game's own text)", keys::FILES.len());
 }
 
 /// Korean for `s` when there is: a game name, then our dictionary; else `s`.
