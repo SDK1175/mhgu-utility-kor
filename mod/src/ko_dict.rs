@@ -522,4 +522,5 @@ pub static DICT: &[(&str, &str)] = &[
     ("Your wishlist is empty", "위시리스트가 비어 있습니다"),
     ("Your wishlist is empty. Add a recipe to plan a route.", "위시리스트가 비어 있습니다. 레시피를 추가하면 경로를 짭니다."),
     ("Zones: ", "구역:"),
+    ("to", "~"),
 ];

@@ -103,7 +103,7 @@ def main():
         cands = ['nativeNX/' + rel, 'nativeNX/jpn/' + rel]
         m = re.fullmatch(r'table/weapon(\d\d)MsgData_jpn\.gmd', rel)
         if m:  # MHXX keeps the weapon names as table/weaponNNMsgData.wNNm
-            cands.insert(0, f'nativeNX/table/weapon{m[1]}MsgData.w{m[1]}m')
+            cands.append(f'nativeNX/table/weapon{m[1]}MsgData.w{m[1]}m')  # (after the patch's _jpn.gmd)
         files.append(cands)
 
     ordered = sorted(keys, key=lambda s: s.encode('utf-8'))

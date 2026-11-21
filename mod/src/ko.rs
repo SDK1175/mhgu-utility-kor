@@ -274,8 +274,9 @@ fn compose(n: &Names, s: &str) -> Option<String> {
         for (rank, ko) in [("G ", "G급 "), ("HR ", "상위 "), ("LR ", "하위 ")] {
             if let Some(name) = mid.strip_prefix(rank) {
                 let mut out = String::from(ko);
-                out.push_str(&part(n, name).unwrap_or_else(|| String::from(name)));
-                out.push_str(" 소재");
+                let name = part(n, name).unwrap_or_else(|| String::from(name));
+                out.push_str(&name);
+                if !name.ends_with("소재") { out.push_str(" 소재"); }
                 return Some(out);
             }
         }
