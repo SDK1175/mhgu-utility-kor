@@ -286,6 +286,11 @@ fn compose(n: &Names, s: &str) -> Option<String> {
         out.push(')');
         return Some(out);
     }
+    if let Some(tree) = s.strip_prefix("A Decoration that boosts ").and_then(|t| t.strip_suffix(" skills.")) {
+        let mut out = part(n, tree).unwrap_or_else(|| String::from(tree));
+        out.push_str(" 스킬을 강화하는 장식주.");
+        return Some(out);
+    }
     if s.contains('|') {
         let mut out = String::new();
         for (i, shot) in s.split('|').enumerate() {

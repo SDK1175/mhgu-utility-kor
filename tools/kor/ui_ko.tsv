@@ -367,3 +367,22 @@ RL Severe	반동 강
 Carry	운반
 Gather	채집
 Airship	비행선
+# item descriptions of the data that differ from the game's own text
+A berry that explodes when struck.	맞으면 터지는 열매.
+A fish that bursts open when it dies.	죽으면 터져 버리는 물고기.
+A fish that can induce exhaustion.	피로를 일으키는 물고기.
+A fish that contains sleeping agents.	수면 성분이 든 물고기.
+A fish that explodes when it dies.	죽으면 폭발하는 물고기.
+A fish that literally pops when it dies.	죽으면 말 그대로 펑 터지는 물고기.
+A mushroom that induces paralysis.	마비를 일으키는 버섯.
+A musty hide covered in moss.	이끼로 뒤덮인 퀴퀴한 가죽.
+A plant containing sleeping agents.	수면 성분이 든 식물.
+A small rock. Can be thrown.	작은 돌. 던질 수 있다.
+A thick, musty hide covered in moss.	이끼로 뒤덮인 두껍고 퀴퀴한 가죽.
+Boosts your natural ability to heal.	자연 회복력을 높인다.
+Part of an Alatreon's convoluted horns.	알바트리온의 뒤틀린 뿔의 일부.
+Restores a moderate amount of Health.	체력을 적당히 회복한다.
+Restores a small amount of Health.	체력을 조금 회복한다.
+The Fire-resistant shell of a Kut-Ku.	얀쿠크의 불에 강한 껍데기.
+The huge, sturdy beak of a Yian Kut-Ku.	얀쿠크의 크고 튼튼한 부리.
+The remains of a dead insect.	죽은 벌레의 잔해.
