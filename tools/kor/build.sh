@@ -33,6 +33,15 @@ grep -E 'Plugin footprint|test result' build/build.log | sort | uniq -c
 
 echo "== 5/5 copy into the game"
 mkdir -p "$DEST"
+# Weapon and armor names: the GU Korean patch's tables, from this PC's copy (read by the plugin at run time; never shipped)
+KP=/f/MHXX_port/MHGU-KoreanPatch/romfs/nativeNX/eng/table
+if [ -d "$KP" ]; then
+  mkdir -p "$DEST/../eng/table"
+  cp "$KP"/*.gmd "$DEST/../eng/table/"
+  echo "GU Korean patch tables: $(ls "$KP"/*.gmd | wc -l) copied"
+else
+  echo "no GU Korean patch at $KP: weapon and armor names stay as the MHXX patch has them"
+fi
 cp build/hunters_compendium.nro "$DEST/"
 ls -la "$DEST/hunters_compendium.nro"
 echo "done: start the game, F6"

@@ -130,6 +130,9 @@ fn decode(src: &[u8], out: &mut Vec<u8>, map: &[(u32, u16)]) -> bool {
             out.extend_from_slice(syllable.encode_utf8(&mut b).as_bytes());
             continue;
         }
+        if is_hangul(ch) {
+            hangul = true; // (the GU Korean patch's tables: plain Unicode Hangul)
+        }
         let to = match c {
             0x3000 => 0x20,
             0xFF01..=0xFF5E => c - 0xFEE0,
@@ -163,14 +166,17 @@ fn fill(data: &[u8], want: &[(u16, u16)], map: &[(u32, u16)], mut n: Option<&mut
         match n.as_deref_mut() {
             Some(n) => {
                 let start = n.pool.len();
-                if decode(row, &mut n.pool, map) {
+                let open = want[next..].iter().take_while(|&&(i, _)| i as usize == index).any(|&(_, slot)| n.spans[slot as usize].1 == 0);
+                if open && decode(row, &mut n.pool, map) {
                     let len = (n.pool.len() - start) as u32;
                     for &(i, slot) in &want[next..] {
                         if i as usize != index {
                             break;
                         }
-                        n.spans[slot as usize] = (start as u32, len);
-                        korean += 1;
+                        if n.spans[slot as usize].1 == 0 {
+                            n.spans[slot as usize] = (start as u32, len);
+                            korean += 1;
+                        }
                     }
                 } else {
                     n.pool.truncate(start);
@@ -205,16 +211,18 @@ fn load(n: &mut Names) {
     for (f, paths) in keys::FILES.iter().enumerate() {
         let want = keys::BY_FILE[f];
         // The file of the candidates (the patch's GMD, the game's own) with the most of these names in Korean
-        let mut best: Option<(usize, Vec<u8>)> = None;
+        // first, then the others for the names it lacks (MHXX patch first; the GU Korean patch for what it left Japanese)
+        let mut tables: Vec<(usize, Vec<u8>)> = Vec::new();
         let mut found = false;
         for p in paths.iter() {
             let Some(data) = read(p) else { continue };
             found = true;
             let korean = fill(&data, want, &map, None);
-            if korean > best.as_ref().map_or(0, |b| b.0) {
-                best = Some((korean, data));
+            if korean > 0 {
+                tables.push((korean, data));
             }
         }
+        tables.sort_by(|a, b| b.0.cmp(&a.0)); // (stable: ties keep the candidates' order)
         if !found {
             if missing < 8 {
                 info!("Korean: no {} in the game", paths[0]);
@@ -223,15 +231,18 @@ fn load(n: &mut Names) {
             continue;
         }
         files += 1;
-        let Some((_, data)) = best else {
+        if tables.is_empty() {
             japanese += want.len();
             if quiet < 8 {
                 info!("Korean: {} has none of its {} names in Korean", paths[0], want.len());
             }
             quiet += 1;
             continue;
-        };
-        let korean = fill(&data, want, &map, Some(n));
+        }
+        let mut korean = 0;
+        for (_, data) in &tables {
+            korean += fill(data, want, &map, Some(n));
+        }
         names += korean;
         japanese += want.len() - korean;
     }
