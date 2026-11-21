@@ -15,5 +15,12 @@ mkdir -p build/kor
   echo; echo "== armor series (patch)"; python3 tools/kor/peek.py $K/table/armorSeriesData_jpn.gmd $G/armorSeriesData_eng.gmd 0 20 "$R" 2>&1
   echo; echo "== GU eng tables"; ls $G | head -100
   echo; echo "== patch arc folders"; ls $K/arc 2>&1 | head -40
+  P=/f/MHXX_port/MHGU-KoreanPatch
+  echo; echo "== GU Korean patch files"; find $P -type f \( -iname '*weapon03*' -o -iname '*armorSeries*' -o -iname '*itemData*' -o -iname '*.nro' \) 2>&1 | head -20
+  echo; echo "== GU Korean patch: what it holds"; find $P -type f | sed "s|$P/||" | cut -d/ -f1-5 | sort | uniq -c | sort -rn | head -20
+  W=$(find $P -type f -iname 'weapon03MsgData_eng.gmd' | head -1)
+  if [ -n "$W" ]; then echo; echo "== GU Korean patch weapon03"; python3 tools/kor/peek.py "$W" $G/weapon03MsgData_eng.gmd 0 14 2>&1; fi
+  A=$(find $P -type f -iname 'armorSeriesData_eng.gmd' | head -1)
+  if [ -n "$A" ]; then echo; echo "== GU Korean patch armor"; python3 tools/kor/peek.py "$A" $G/armorSeriesData_eng.gmd 8 12 2>&1; fi
 } > build/kor/diag.txt 2>&1
 echo "done: attach build/kor/diag.txt"
