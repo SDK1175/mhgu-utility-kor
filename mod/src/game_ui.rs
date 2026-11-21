@@ -5,7 +5,8 @@ static RANGES:&[u16]=&[32,383,0x2014,0x2015,0x2019,0x2019,0x2026,0x2026,0x2190,0
 static mut FONT:*mut sys::ImFont=core::ptr::null_mut();
 // Korean fork: Paperlogy's Hangul (SIL OFL 1.1, licenses/Paperlogy-OFL.txt) merged into the game glyphs.
 static KO_FONT:&[u8]=include_bytes!("../assets/paperlogy-ko.ttf");
-static KO_RANGES:&[u16]=&[0xB7,0xB7,0x2460,0x2473,0x3131,0x318E,0xAC00,0xD7A3,0];
+// (only glyphs the game's font lacks are taken from these: brackets 【】「」, circled numbers, arrows, ...)
+static KO_RANGES:&[u16]=&[0x80,0x24F,0x2000,0x206F,0x2190,0x21FF,0x2460,0x24FF,0x25A0,0x25FF,0x3001,0x303F,0x3131,0x318E,0xAC00,0xD7A3,0];
 const KO_ADVANCE:f32=792.0/1060.0;
 
 #[unsafe(no_mangle)]pub extern "C" fn forge_onImGuiInit(_: *mut core::ffi::c_void,_: *mut core::ffi::c_void,_: *mut core::ffi::c_void){unsafe{
@@ -50,4 +51,4 @@ pub fn title(d:&imgui::DrawList,rect:[f32;4]){
 }
 pub fn button(d:&imgui::DrawList,index:usize,rect:[f32;4]){part(d,5+index,[0.0,0.0,28.0,28.0],rect,u32::MAX);}
 
-pub fn width(size:f32,text:&str)->f32{text.chars().map(|ch|if super::ko::is_hangul(ch){KO_ADVANCE*size}else{data::WIDTHS.binary_search_by_key(&(ch as u32),|v|v.0).ok().map(|i|data::WIDTHS[i].1 as f32/1024.0*size).unwrap_or(size*0.5)}).sum()}
+pub fn width(size:f32,text:&str)->f32{text.chars().map(|ch|if super::ko::is_hangul(ch)||matches!(ch as u32,0x3001..=0x303F){KO_ADVANCE*size}else{data::WIDTHS.binary_search_by_key(&(ch as u32),|v|v.0).ok().map(|i|data::WIDTHS[i].1 as f32/1024.0*size).unwrap_or(size*0.5)}).sum()}
