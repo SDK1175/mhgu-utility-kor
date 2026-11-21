@@ -214,7 +214,8 @@ pub fn tr(s: &str) -> &str {
         // (an entry is never removed or changed: its text stays where it is)
         return unsafe { &*(t.as_str() as *const str) };
     }
-    let t = compose(n, s).unwrap_or_else(|| String::from(s));
+    // (a text already put together in Korean, "여성   검사   HR 1", is not taken apart again)
+    let t = if s.chars().any(is_hangul) { None } else { compose(n, s) }.unwrap_or_else(|| String::from(s));
     let t = n.composed.entry(String::from(s)).or_insert(t);
     unsafe { &*(t.as_str() as *const str) }
 }
