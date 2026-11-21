@@ -24,7 +24,45 @@ def entries():
         out[en] = ko
     for i in range(1, 21):
         out.setdefault(f'Area {i}', f'구역 {i}')
+    for en, ko in GENERATED.items():
+        out.setdefault(en, ko)
     return out
+
+
+# Item-source labels of the Kiranico data, and words the plugin translates composite labels with (ko.rs, compose).
+PARTS = {'Back': '등', 'Back Leg': '뒷다리', 'Beak': '부리', 'Belly': '배', 'Body': '몸통', 'Chest': '가슴',
+         'Claw': '발톱', 'Claws': '발톱', 'Ears': '귀', 'Eye': '눈', 'Feelers': '더듬이', 'Fin': '지느러미',
+         'Front Leg': '앞다리', 'Front Legs': '앞다리', 'Gills': '아가미', 'Head': '머리', 'Hide': '외피', 'Horn': '뿔',
+         'Jaw': '턱', 'Left Claw': '왼쪽 집게', 'Left Shoulder': '왼쪽 어깨', 'Left Tentacle': '왼쪽 촉수', 'Leg': '다리',
+         'Leg Claws': '다리 발톱', 'Legs': '다리', 'Pounder': '꼬리 망치', 'Right Claw': '오른쪽 집게',
+         'Right Shoulder': '오른쪽 어깨', 'Right Tentacle': '오른쪽 촉수', 'Shell': '껍데기', 'Spike': '가시',
+         'Sponge': '해면', 'Tail': '꼬리', 'Tailfeather': '꽁지깃', 'Trunk': '코', 'Unknown': '미확인',
+         'Wing Arms': '날개팔', 'Wings': '날개', 'Wingtalon': '날개 발톱', 'Shell (Conch)': '껍데기 (소라)',
+         'Shell (Wyvern Skull)': '껍데기 (비룡 두개골)'}
+GENERATED = {f'Break {k}': f'{v} 파괴' for k, v in PARTS.items()}
+GENERATED.update({f'Break Neset {i}': f'거미줄 파괴 {i}' for i in range(1, 6)})
+GENERATED.update({f'Neset Shiny {i}': f'거미줄 낙하물 {i}' for i in range(1, 3)})
+GENERATED.update({f'Shiny {i}': f'낙하물 {i}' for i in range(1, 6)})
+GENERATED.update({f'{k} {i}': f'{v} {i}' for k, v in (('Normal', '통상'), ('Long', '방사'), ('Wide', '확산')) for i in range(1, 6)})
+GENERATED.update({
+    'Body Carve': '본체 갈무리', 'Body Carve (Stuned)': '본체 갈무리 (기절)', 'Tail Carve': '꼬리 갈무리',
+    'Body Gather': '본체 채집', 'Capture': '포획', 'Shiny': '낙하물', 'Mining': '채광', 'Insect Gather Back': '등 벌레 채집',
+    'Neset Carve': '거미줄 갈무리', 'Neset Gather': '거미줄 채집',
+    'Shiny (Cutting Weapon)': '낙하물 (절단 무기)', 'Shiny (Drinking)': '낙하물 (마시기)', 'Shiny (Eating)': '낙하물 (먹기)',
+    'Shiny (Fish)': '낙하물 (물고기)', 'Shiny (Honey)': '낙하물 (꿀)', 'Shiny (Surprise)': '낙하물 (놀람)',
+    'Shiny (Surprise Rare)': '낙하물 (놀람, 희귀)',
+    'Bone': '뼈', 'Grass': '풀', 'Insect': '곤충', 'Mushroom': '버섯', 'Nuts': '열매', 'Stone': '광석', 'Fish': '물고기',
+    'Bait': '미끼', 'Fixed1': '고정 1', 'Fixed2': '고정 2', 'Secret': '비밀',
+    'Fishing (Burst Bait)': '낚시 (폭발 미끼)', 'Fishing (Goldenfish Bait)': '낚시 (황금어 미끼)',
+    'Fishing (Mega Fishing Fly)': '낚시 (대형 낚시 벌레)', 'Fishing (No Bait)': '낚시 (미끼 없음)',
+    'Fishing (Sushifish Bait)': '낚시 (초밥어 미끼)',
+    # words of "Guild ★13 / Reward Hunt 10", "Fir 30 +5%", "Thn 40 Def+15"
+    'Guild': '집회소', 'Village': '마을', 'Event': '이벤트', 'Arena': '투기장', 'Permit': '특수 허가', 'Reward': '보수',
+    'Sub': '서브', 'Slay': '토벌', 'Hunt': '수렵', 'Deliver': '납품', 'Repel': '격퇴', 'Fort': '요새',
+    'Fir': '불', 'Wat': '물', 'Thn': '번개', 'Dra': '용', 'Psn': '독', 'Par': '마비', 'Sle': '수면', 'Bla': '폭파',
+    'Training': '훈련',
+})
+
 
 
 def rust(s):

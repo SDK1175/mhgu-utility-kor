@@ -306,3 +306,64 @@ Equipment byproducts	장비 부산물
 No recipes found	레시피가 없습니다
 Prowler gathering	냥터 채집
 Scraps	잡동사니
+# item sources and shops (Kiranico data)
+Adept Style Training	브시도 스타일 훈련
+Aerial Style Training	에리얼 스타일 훈련
+Alchemy Style Training	연금 스타일 훈련
+Guild Style Training	길드 스타일 훈련
+Striker Style Training	스트라이커 스타일 훈련
+Valor Style Training	브레이브 스타일 훈련
+SP Hunter Arts Training	SP 수렵기술 훈련
+Hunter Training: Capturing	헌터 훈련: 포획
+Hunter Training: Combining	헌터 훈련: 조합
+Hunter Training: Fishing	헌터 훈련: 낚시
+Hunter Training: Mining	헌터 훈련: 채광
+Hunter Training: Slaying	헌터 훈련: 토벌
+Hunter Training: The Basics	헌터 훈련: 기본
+Prowler Training: Capturing	냥터 훈련: 포획
+Prowler Training: Combining	냥터 훈련: 조합
+Prowler Training: Fishing	냥터 훈련: 낚시
+Prowler Training: Gathering	냥터 훈련: 채집
+Prowler Training: Slaying I	냥터 훈련: 토벌 I
+Prowler Training: Slaying II	냥터 훈련: 토벌 II
+Prowler Training: The Basics	냥터 훈련: 기본
+Armor smithy	방어구 공방
+Weapon smithy	무기 공방
+Craft at smithy recipe A	공방 제작 레시피 A
+Craft at smithy recipe B	공방 제작 레시피 B
+Combining recipe 1	조합 레시피 1
+Combining recipe 2	조합 레시피 2
+Failed combination	조합 실패
+Gift; no exchange item	선물 (교환 아이템 없음)
+Trader point exchange	교역 포인트 교환
+Veggie Elder gifts	채소 장로 선물
+Veggie Elder trades	채소 장로 교환
+Service rewards	서비스 보수
+Hunting with friends	친구와 수렵
+Challenge G-rank quests	G급 퀘스트 도전
+Availability depends on quest	퀘스트에 따라 다름
+Award threshold not recorded	지급 조건 기록 없음
+Best customers; threshold not recorded	단골 보수 (조건 기록 없음)
+Internal game data	게임 내부 데이터
+Internal game entry	게임 내부 항목
+Not a regular pouch item	일반 파우치 아이템 아님
+Pilfer or Plunderang	훔치기 또는 강탈 부메랑
+Input ×1	재료 ×1
+Reward1	보수 1
+Reward2	보수 2
+Research	연구
+Bath	목욕탕
+Footbath	족욕
+Luxury Bath	고급 목욕탕
+Posh Bath	호화 목욕탕
+Guild contributions	길드 공헌
+Medium	보통
+V.Fast	매우 빠름
+V.Slow	매우 느림
+Abv. Ave.	평균 이상
+Bel. Ave.	평균 이하
+RL Mild	반동 약
+RL Severe	반동 강
+Carry	운반
+Gather	채집
+Airship	비행선

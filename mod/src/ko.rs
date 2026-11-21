@@ -7,7 +7,7 @@
 //!   ko_keys (tools/kor/keys.py). Nothing of the game's text is in the plugin.
 //! - Everything else: ko_dict (tools/kor/ui_ko.tsv), our own translations.
 //! A string that is neither (or a name the game's file has no Korean for: an unpatched game) is drawn as it is.
-use alloc::{borrow::Cow, string::String, vec::Vec};
+use alloc::{borrow::Cow, collections::BTreeMap, string::String, vec::Vec};
 use core::cell::UnsafeCell;
 use core::ffi::{c_char, c_void};
 use forge::log::prelude::info;
@@ -27,10 +27,10 @@ unsafe extern "C" {
     fn close_file(handle: FileHandle);
 }
 
-struct Names { loaded: bool, pool: Vec<u8>, spans: Vec<(u32, u32)> }
+struct Names { loaded: bool, pool: Vec<u8>, spans: Vec<(u32, u32)>, composed: BTreeMap<String, String> }
 struct Local(UnsafeCell<Names>);
 unsafe impl Sync for Local {}
-static NAMES: Local = Local(UnsafeCell::new(Names { loaded: false, pool: Vec::new(), spans: Vec::new() }));
+static NAMES: Local = Local(UnsafeCell::new(Names { loaded: false, pool: Vec::new(), spans: Vec::new(), composed: BTreeMap::new() }));
 
 const MAX_FILE: i64 = 8 << 20;
 
@@ -197,7 +197,8 @@ fn load(n: &mut Names) {
     info!("Korean: {names} game names from {files} of {} tables ({japanese} not Korean: the game's own text)", keys::FILES.len());
 }
 
-/// Korean for `s` when there is: a game name, then our dictionary; else `s`.
+/// Korean for `s` when there is: a game name, then our dictionary, then a composite label put together from those
+/// (compose); else `s`.
 pub fn tr(s: &str) -> &str {
     if !s.bytes().any(|b| b.is_ascii_alphabetic()) {
         return s;
@@ -206,19 +207,125 @@ pub fn tr(s: &str) -> &str {
     if !n.loaded {
         load(n);
     }
+    if let Some(t) = exact(n, s) {
+        return t;
+    }
+    if let Some(t) = n.composed.get(s) {
+        // (an entry is never removed or changed: its text stays where it is)
+        return unsafe { &*(t.as_str() as *const str) };
+    }
+    let t = compose(n, s).unwrap_or_else(|| String::from(s));
+    let t = n.composed.entry(String::from(s)).or_insert(t);
+    unsafe { &*(t.as_str() as *const str) }
+}
+
+fn exact(n: &Names, s: &str) -> Option<&'static str> {
     if let Ok(i) = keys::KEYS.binary_search(&s) {
         let (start, len) = n.spans[i];
         if len > 0 {
             if let Ok(t) = core::str::from_utf8(&n.pool[start as usize..(start + len) as usize]) {
                 // (the pool is only written while loading, before any of it is handed out)
-                return unsafe { &*(t as *const str) };
+                return Some(unsafe { &*(t as *const str) });
             }
         }
     }
-    match ko_dict::DICT.binary_search_by(|(k, _)| k.as_bytes().cmp(s.as_bytes())) {
-        Ok(i) => ko_dict::DICT[i].1,
-        Err(_) => s,
+    ko_dict::DICT.binary_search_by(|(k, _)| k.as_bytes().cmp(s.as_bytes())).ok().map(|i| ko_dict::DICT[i].1)
+}
+
+/// A part of a composite label: exactly known, or itself composite. None when not all of it is known.
+fn part(n: &Names, s: &str) -> Option<String> {
+    exact(n, s).map(String::from).or_else(|| compose(n, s))
+}
+
+/// Composite labels of the data, from known parts: "Rathalos Cap S LV5", "Basarios / Body Carve",
+/// "Break Head G1-2", "HR Rathalos Materials", "Arctic Ridge (N)", "Guild ★13 / Reward Hunt 10", "Thn 40 Def+15",
+/// "Rapid 2|Pierce 3|Spread 3*" (bow charge shots).
+fn compose(n: &Names, s: &str) -> Option<String> {
+    for sep in [" // ", " / "] {
+        if s.contains(sep) {
+            let mut out = String::new();
+            let mut any = false;
+            for (i, p) in s.split(sep).enumerate() {
+                if i > 0 { out.push_str(sep); }
+                match part(n, p) { Some(t) => { out.push_str(&t); any = true; } None => out.push_str(p) }
+            }
+            return any.then_some(out);
+        }
     }
+    if let Some((base, level)) = s.rsplit_once(" LV").filter(|(_, l)| !l.is_empty() && l.bytes().all(|b| b.is_ascii_digit())) {
+        let mut out = part(n, base)?;
+        out.push_str(" LV");
+        out.push_str(level);
+        return Some(out);
+    }
+    if let Some((base, range)) = s.rsplit_once(' ').filter(|(_, r)| level_range(r)) {
+        let mut out = part(n, base)?;
+        out.push(' ');
+        out.push_str(range);
+        return Some(out);
+    }
+    if let Some(base) = s.strip_suffix(" (N)") {
+        let mut out = part(n, base)?;
+        out.push_str(" (밤)");
+        return Some(out);
+    }
+    if let Some(mid) = s.strip_suffix(" Materials") {
+        for (rank, ko) in [("G ", "G급 "), ("HR ", "상위 "), ("LR ", "하위 ")] {
+            if let Some(name) = mid.strip_prefix(rank) {
+                let mut out = String::from(ko);
+                out.push_str(&part(n, name).unwrap_or_else(|| String::from(name)));
+                out.push_str(" 소재");
+                return Some(out);
+            }
+        }
+    }
+    if let Some((base, inner)) = s.strip_suffix(')').and_then(|t| t.rsplit_once(" (")) {
+        let mut out = part(n, base)?;
+        out.push_str(" (");
+        out.push_str(&part(n, inner).unwrap_or_else(|| String::from(inner)));
+        out.push(')');
+        return Some(out);
+    }
+    if s.contains('|') {
+        let mut out = String::new();
+        for (i, shot) in s.split('|').enumerate() {
+            if i > 0 { out.push('|'); }
+            let (kind, rest) = shot.split_once(' ').unwrap_or((shot, ""));
+            out.push_str(match kind { "Rapid" => "연사", "Pierce" => "관통", "Spread" => "확산", "Heavy" => "강사", k => k });
+            if !rest.is_empty() { out.push(' '); out.push_str(rest); }
+        }
+        return Some(out);
+    }
+    words(n, s)
+}
+
+/// "G1-2", "Lv1-4": a level range after a source label
+fn level_range(r: &str) -> bool {
+    let digits = r.strip_prefix("Lv").or_else(|| r.strip_prefix('G'));
+    digits.is_some_and(|d| d.split_once('-').is_some_and(|(a, b)| !a.is_empty() && !b.is_empty() && a.bytes().chain(b.bytes()).all(|c| c.is_ascii_digit())))
+}
+
+/// Word by word, when every word with letters is known ("Guild ★13", "Reward Hunt 10", "Fir 30 +5% Def+20");
+/// single capitals (A, B, ...) and numbers stay.
+fn words(n: &Names, s: &str) -> Option<String> {
+    let mut out = String::new();
+    let mut any = false;
+    for (i, w) in s.split(' ').enumerate() {
+        if i > 0 { out.push(' '); }
+        if let Some(v) = w.strip_prefix("Def+") {
+            out.push_str("방어+");
+            out.push_str(v);
+            any = true;
+        } else if let Some(t) = exact(n, w) {
+            out.push_str(t);
+            any = true;
+        } else if w.bytes().filter(|b| b.is_ascii_alphabetic()).count() <= 1 || w.starts_with("HP") {
+            out.push_str(w);
+        } else {
+            return None;
+        }
+    }
+    any.then_some(out)
 }
 
 pub fn is_hangul(c: char) -> bool { matches!(c as u32, 0x1100..=0x11FF | 0x3131..=0x318E | 0xAC00..=0xD7A3) }

@@ -65,6 +65,22 @@ def main():
             wanted.update(s for s in literals(f.read_text(encoding='utf-8')) if s.strip())
     if not wanted:
         raise SystemExit('build/generated is empty: run tools/prepare.py (tools/kor/setup.sh) first')
+    # The parts the plugin translates a composite string by (mod/src/ko.rs, compose): "Rathalos Cap S LV5",
+    # "Basarios / Body Carve", "HR Rathalos Materials", "Arctic Ridge (N)", "Break Shell (Gravios) G1-2".
+    derived = set()
+    for s in wanted:
+        for part in re.split(r' // | / ', s):
+            part = re.sub(r' LV\d+$', '', part)
+            part = re.sub(r' (?:Lv|G)\d+-\d+$', '', part)
+            m = re.fullmatch(r'(?:G|HR|LR) (.+) Materials', part)
+            if m:
+                part = m[1]
+            part = re.sub(r' \(N\)$', '', part)
+            m = re.fullmatch(r'.+ \((.+)\)', part)
+            if m:
+                derived.add(m[1])
+            derived.add(part)
+    wanted |= derived
 
     def rank(p):
         stem = p.stem
