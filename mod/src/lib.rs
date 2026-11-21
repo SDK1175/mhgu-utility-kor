@@ -22,6 +22,8 @@ impl Write for Text{fn write_str(&mut self,s:&str)->fmt::Result{let mut n=s.len(
 // consonant (ㄹ) matches a syllable starting with it, so initials search (ㄹㅇㅅ) and a syllable still being typed work.
 fn letters(s:&str,out:&mut[char])->usize{let mut n=0;for ch in s.chars(){if n==out.len(){break;}let c=if ch.is_ascii_alphanumeric(){ch.to_ascii_lowercase()}else if matches!(ch as u32,0xAC00..=0xD7A3|0x3131..=0x318E){ch}else{continue};out[n]=c;n+=1;}n}
 fn contains(hay:&[char],q:&[char])->bool{let eq=|q:char,h:char|q==h||hangul::consonant(q)&&hangul::initial(h)==Some(q);q.len()<=hay.len()&&hay.windows(q.len()).any(|w|w.iter().zip(q).all(|(&h,&q)|eq(q,h)))}
+/// In Korean (가나다) order of the names shown; each name translated once.
+fn sort_ko(ids:&mut[u16],name:impl Fn(usize)->&'static str){let mut keyed:alloc::vec::Vec<(&str,u16)>=ids.iter().map(|&i|(ko::tr(name(i as usize)),i)).collect();keyed.sort_unstable();for(d,(_,i))in ids.iter_mut().zip(keyed){*d=i;}}
 fn query_match(s:&str,u:&Ui)->bool{
  let mut q=['\0';49];let n=letters(core::str::from_utf8(&u.query[..u.len]).unwrap_or(""),&mut q[..48]);if n==0{return true;}
  let mut hay=['\0';256];
@@ -36,8 +38,8 @@ fn location_available(id:usize,rank:u8)->bool{
  if matches!(world::LOCATIONS[id].name,"Forlorn Arena"|"Wyvern's End"|"Sanctuary"){return false;}
  world::QUESTS.iter().any(|&(_,loc,r)|loc as usize==id&&r==rank)&&world::GATHER.iter().any(|r|r.loc as usize==id&&r.rank==rank&&!r.supply)
 }
-fn rebuild(u:&mut Ui){if !u.dirty{return;}u.count=0;
- if u.builder&&u.detail==usize::MAX{for(i,a)in set_data::ACTIVATIONS.iter().enumerate(){if a.points>0&&query_match(a.name,u){u.results[u.count]=i as u16;u.count+=1;}}u.results[..u.count].sort_unstable_by(|&a,&b|ko::tr(set_data::ACTIVATIONS[a as usize].name).cmp(ko::tr(set_data::ACTIVATIONS[b as usize].name)));u.selected=u.selected.min(u.count.saturating_sub(1));u.dirty=false;return;}
+fn rebuild(u:&mut Ui){if !u.dirty||u.pc_search&&desktop::typing_recently(){return;}u.count=0;
+ if u.builder&&u.detail==usize::MAX{for(i,a)in set_data::ACTIVATIONS.iter().enumerate(){if a.points>0&&query_match(a.name,u){u.results[u.count]=i as u16;u.count+=1;}}sort_ko(&mut u.results[..u.count],|i|set_data::ACTIVATIONS[i].name);u.selected=u.selected.min(u.count.saturating_sub(1));u.dirty=false;return;}
 
  if u.quick_map&&u.location>=0&&!location_available(u.location as usize,u.rank){u.zone_count=0;u.selected=0;u.dirty=false;return;}
  if u.tab==2&&u.location>=0&&!location_available(u.location as usize,u.rank){u.location=-1;u.zone=0;u.selected=0;u.detail=usize::MAX;u.depth=0;}
@@ -48,7 +50,7 @@ fn rebuild(u:&mut Ui){if !u.dirty{return;}u.count=0;
  match u.tab{
   0=>if u.item_category<0&&u.len==0{for i in 0..item_data::CATEGORIES.len(){u.results[u.count]=i as u16;u.count+=1;}}else{for (i,e) in catalog::ENTRIES.iter().enumerate(){if e.kind==0&&(u.len>0||item_data::CATEGORY[i]as i16==u.item_category)&&query_match(e.name,u){u.results[u.count]=i as u16;u.count+=1;}}
    // Korean fork: in Korean (가나다) order
-   u.results[..u.count].sort_unstable_by(|&a,&b|ko::tr(catalog::ENTRIES[a as usize].name).cmp(ko::tr(catalog::ENTRIES[b as usize].name)));},
+   sort_ko(&mut u.results[..u.count],|i|catalog::ENTRIES[i].name);},
   1=>if u.weapon<0{for (i,name) in world::CLASSES.iter().enumerate(){if query_match(name,u){u.results[u.count]=i as u16;u.count+=1;}}}else{for (i,n) in world::TREE.iter().enumerate(){if n.kind as i16==u.weapon&&query_match(n.name,u){u.results[u.count]=i as u16;u.count+=1;}}},
   3=>{for (i,w) in wishlist::entries().iter().enumerate(){if query_match(wishlist::name(w.node),u){u.results[u.count]=i as u16;u.count+=1;}}},
   4=>{if u.armor_slot==-1&&u.len==0{for i in 0..6{u.results[u.count]=i;u.count+=1;}}else{for(i,a)in armor_data::ARMOR.iter().enumerate(){if (u.armor_rank<0||armor::rank(a)==u.armor_rank)&&(u.armor_hunter<0||a.hunter==2||a.hunter as i8==u.armor_hunter)&&(u.armor_gender<0||a.gender==2||a.gender as i8==u.armor_gender)&&(if u.armor_slot==-2{a.leader}else{u.len>0||a.slot as i16==u.armor_slot})&&(query_match(a.name,u)||u.armor_slot==-2&&query_match(armor::set_name(a),u)){u.results[u.count]=i as u16;u.count+=1;}}}},

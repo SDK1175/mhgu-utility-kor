@@ -26,6 +26,9 @@ fn typing(out:&mut[u16;40])->(usize,bool){
 static mut KOREAN:bool=true;
 static mut COMPOSER:super::hangul::Composer=super::hangul::Composer::new();
 pub fn korean()->bool{unsafe{KOREAN}}
+// The results follow the search once typing pauses (a search over every name each key press would hold up typing).
+static mut LAST_EDIT:f64=-1.0;
+pub fn typing_recently()->bool{forge::imgui::get_time()-unsafe{LAST_EDIT}<0.18}
 fn composer()->&'static mut super::hangul::Composer{unsafe{&mut *core::ptr::addr_of_mut!(COMPOSER)}}
 pub fn mouse_free(free:bool){unsafe{if MOUSE_FREE!=free{forge_input_setMouseFree(free);MOUSE_FREE=free;}}}
 #[derive(Clone,Copy)]pub enum Action{BuilderEffect(usize),ArmorOverview,BuilderSkills,BuilderJewels,BuilderJewel(usize),BuilderStart,BuilderSelect(usize),BuilderResult(usize),BuilderWish,ItemSource(usize),ArmorFilter(bool),ArmorRank(i8),QuestPlan,QuestSelect(usize),QuestMaterial(usize),QuestMember(usize),ArmorSetWish,SearchKey(usize),Armor(usize),ArmorWish,QuickExpand,WishMaterial(usize,usize),WishRemove(usize),None,Wishlist,Back,Search,Tab(usize),Select(usize),Entry(usize),Zone(usize),Rank(usize),WeaponNode(usize),Recipe(usize),Material(usize),Panel(bool),ItemGroup(usize),Page(bool)}
@@ -84,7 +87,7 @@ pub fn keys(u:&mut Ui,p:&mut u32){
    if let Some(j)=jamo{let open=composer().open;let out=composer().key(j);u.editor.select_back(open);u.editor.insert(&mut u.query,&mut u.len,out.str());}
    else{composer().finish();let c=if shift{ch.to_ascii_uppercase()}else{ch};let b=[c];u.editor.insert(&mut u.query,&mut u.len,core::str::from_utf8(&b).unwrap_or(""));}
   }
-  if edited{changed(u);}
+  if edited{changed(u);unsafe{LAST_EDIT=forge::imgui::get_time();}}
   if Input::is_key_pressed(Key::Delete){u.editor.delete(&mut u.query,&mut u.len,false);changed(u);}
  }else{
   for(key,bit)in[(Key::Up,13),(Key::Down,15),(Key::Left,12),(Key::Right,14),(Key::Enter,0),(Key::Tab,7),(Key::LeftBracket,8),(Key::RightBracket,9),(Key::F8,5),(Key::F9,2),(Key::F10,4)]{if Input::is_key_pressed(key){u.desktop=true;*p|=1<<bit;}}
