@@ -10,3 +10,4 @@ __pycache__/
 *.gmd
 *.tex
 *.img
+/inputs/
