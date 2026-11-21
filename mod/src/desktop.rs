@@ -5,7 +5,24 @@ unsafe extern "C"{fn forge_input_setMouseFree(free:bool);}
 static mut MOUSE_FREE:bool=false;
 // Korean fork: Hangul typing (hangul.rs). Han/Eng: the 한/영 key (LANG1, scancode 144) or Right Alt (230); Forge's key
 // numbers are the keyboard's scancodes, so they are asked for by number.
-unsafe extern "C"{#[link_name="forge_input_isKeyPressed"]fn key_pressed_raw(key:u32)->bool;}
+unsafe extern "C"{#[link_name="forge_input_isKeyPressed"]fn key_pressed_raw(key:u32)->bool;
+ // The port's ordered key presses (MHXX Recomp 0.10.8+): polling once a frame reorders fast typing. 0 from an older port.
+ fn mhxx_input_keyQueue()->u32;fn mhxx_input_popKey()->u32;}
+const BACK:u16=0xffff;const HANENG:u16=0xfffe;
+/// This frame's typing in order: a character (bit 8: Shift), BACK, HANENG.
+fn typing(out:&mut[u16;40])->(usize,bool){
+ if unsafe{mhxx_input_keyQueue()}!=1{return (0,false);}
+ let mut n=0;
+ loop{let v=unsafe{mhxx_input_popKey()};if v==0{break;}
+  let code=v&0x1ff;let shift=v>>16&1!=0;let other=v>>17&3!=0;
+  let item=match code{
+   4..=29 if !other=>Some(u16::from(b'a'+(code-4)as u8)),30..=38 if !other=>Some(u16::from(b'1'+(code-30)as u8)),39 if !other=>Some(u16::from(b'0')),
+   44 if !other=>Some(u16::from(b' ')),45 if !other=>Some(u16::from(b'-')),52 if !other=>Some(u16::from(b'\'')),
+   42=>Some(BACK),144|230=>if v>>19&1==0{Some(HANENG)}else{None},_=>None};
+  if let Some(i)=item{if n<out.len(){out[n]=if i<256&&shift{i|0x100}else{i};n+=1;}}
+ }
+ (n,true)
+}
 static mut KOREAN:bool=true;
 static mut COMPOSER:super::hangul::Composer=super::hangul::Composer::new();
 pub fn korean()->bool{unsafe{KOREAN}}
@@ -30,9 +47,16 @@ pub fn keys(u:&mut Ui,p:&mut u32){
  if wheel!=0.0&&!u.pc_search{let down=wheel<0.0;if u.builder&&u.detail==usize::MAX&&super::set_builder::state().show_results{super::set_builder::page(u,down);}else if u.tab==3&&u.detail==usize::MAX{if u.planner{super::quest::move_rows(down,3);}else{super::wishlist::move_material(u,down,3);}}else if super::item::active(u){super::item::scroll(u,down,3);}else if super::armor::active(u){if u.armor_overview{super::armor::move_skill(u,down,3);}else{super::armor::move_material(u,down,3);}}else if u.detail!=usize::MAX{let max=super::catalog::ENTRIES[u.detail].body.lines().count().saturating_sub(21);u.scroll=if down{(u.scroll+3).min(max)}else{u.scroll.saturating_sub(3)};}else{u.selected=if down{(u.selected+3).min(u.count.saturating_sub(1))}else{u.selected.saturating_sub(3)};}}
  if Input::is_key_pressed(Key::Escape){u.desktop=true;back(u);*p=0;return;}
  if Input::is_ctrl_down()&&(Input::is_key_pressed(Key::F)||Input::is_key_pressed(Key::V)){if !u.pc_search{u.editor.end(u.len,false);}u.pc_search=true;u.typing=false;u.desktop=true;*p=0;}
- if unsafe{key_pressed_raw(144)||key_pressed_raw(230)}{unsafe{KOREAN=!KOREAN;}composer().finish();u.desktop=true;}
+ let mut seq=[0u16;40];let (mut seq_len,queued)=typing(&mut seq);
+ if !queued&&unsafe{key_pressed_raw(144)||key_pressed_raw(230)}{seq[0]=HANENG;seq_len=1;}
  let mut typed=[0u8;40];let mut typed_len=0;
- for (key,ch) in [(Key::A,b'a'),(Key::B,b'b'),(Key::C,b'c'),(Key::D,b'd'),(Key::E,b'e'),(Key::F,b'f'),(Key::G,b'g'),(Key::H,b'h'),(Key::I,b'i'),(Key::J,b'j'),(Key::K,b'k'),(Key::L,b'l'),(Key::M,b'm'),(Key::N,b'n'),(Key::O,b'o'),(Key::P,b'p'),(Key::Q,b'q'),(Key::R,b'r'),(Key::S,b's'),(Key::T,b't'),(Key::U,b'u'),(Key::V,b'v'),(Key::W,b'w'),(Key::X,b'x'),(Key::Y,b'y'),(Key::Z,b'z'),(Key::N0,b'0'),(Key::N1,b'1'),(Key::N2,b'2'),(Key::N3,b'3'),(Key::N4,b'4'),(Key::N5,b'5'),(Key::N6,b'6'),(Key::N7,b'7'),(Key::N8,b'8'),(Key::N9,b'9'),(Key::Space,b' '),(Key::Minus,b'-'),(Key::Apostrophe,b'\'')]{if Input::is_key_pressed(key){typed[typed_len]=ch;typed_len+=1;}}
+ if !queued{for (key,ch) in [(Key::A,b'a'),(Key::B,b'b'),(Key::C,b'c'),(Key::D,b'd'),(Key::E,b'e'),(Key::F,b'f'),(Key::G,b'g'),(Key::H,b'h'),(Key::I,b'i'),(Key::J,b'j'),(Key::K,b'k'),(Key::L,b'l'),(Key::M,b'm'),(Key::N,b'n'),(Key::O,b'o'),(Key::P,b'p'),(Key::Q,b'q'),(Key::R,b'r'),(Key::S,b's'),(Key::T,b't'),(Key::U,b'u'),(Key::V,b'v'),(Key::W,b'w'),(Key::X,b'x'),(Key::Y,b'y'),(Key::Z,b'z'),(Key::N0,b'0'),(Key::N1,b'1'),(Key::N2,b'2'),(Key::N3,b'3'),(Key::N4,b'4'),(Key::N5,b'5'),(Key::N6,b'6'),(Key::N7,b'7'),(Key::N8,b'8'),(Key::N9,b'9'),(Key::Space,b' '),(Key::Minus,b'-'),(Key::Apostrophe,b'\'')]{if Input::is_key_pressed(key){typed[typed_len]=ch;typed_len+=1;}}
+  let shift=Input::is_shift_down();for &ch in &typed[..typed_len]{if seq_len<seq.len(){seq[seq_len]=u16::from(ch)|if shift{0x100}else{0};seq_len+=1;}}
+  if Input::is_key_pressed(Key::Backspace)&&seq_len<seq.len(){seq[seq_len]=BACK;seq_len+=1;}
+ }
+ // Han/Eng toggles in the order typed
+ for &v in &seq[..seq_len]{if v==HANENG{unsafe{KOREAN=!KOREAN;}composer().finish();u.desktop=true;}}
+ typed_len=seq[..seq_len].iter().filter(|&&v|v<0x200).count();
  // Printable physical keys take precedence over the game's WASD/controller mapping.
  if typed_len>0&&!Input::is_ctrl_down()&&!Input::is_alt_down(){if !u.pc_search{u.editor.end(u.len,false);}u.pc_search=true;u.typing=false;u.desktop=true;*p=0;}
  if u.pc_search{
@@ -49,13 +73,18 @@ pub fn keys(u:&mut Ui,p:&mut u32){
   if [Key::Left,Key::Right,Key::Home,Key::End,Key::Delete].into_iter().any(Input::is_key_pressed){composer().finish();}
   for(key,right)in[(Key::Left,false),(Key::Right,true)]{if Input::is_key_pressed(key){u.editor.step(&u.query[..u.len],right,shift);}}
   if Input::is_key_pressed(Key::Home){u.editor.home(shift);}if Input::is_key_pressed(Key::End){u.editor.end(u.len,shift);}
-  for &ch in &typed[..typed_len]{
+  // (in the order typed: a syllable is put together key by key)
+  let mut edited=false;
+  for &v in &seq[..seq_len]{
+   if v==HANENG{continue;}
+   edited=true;
+   if v==BACK{let open=composer().open;match composer().back(){Some(out)=>{u.editor.select_back(open);u.editor.insert(&mut u.query,&mut u.len,out.str());}None=>u.editor.delete(&mut u.query,&mut u.len,true)}continue;}
+   let ch=(v&0xff)as u8;let shift=v&0x100!=0;
    let jamo=if korean(){super::hangul::jamo(ch,shift)}else{None};
    if let Some(j)=jamo{let open=composer().open;let out=composer().key(j);u.editor.select_back(open);u.editor.insert(&mut u.query,&mut u.len,out.str());}
    else{composer().finish();let c=if shift{ch.to_ascii_uppercase()}else{ch};let b=[c];u.editor.insert(&mut u.query,&mut u.len,core::str::from_utf8(&b).unwrap_or(""));}
   }
-  if typed_len>0{changed(u);}
-  if Input::is_key_pressed(Key::Backspace){let open=composer().open;match composer().back(){Some(out)=>{u.editor.select_back(open);u.editor.insert(&mut u.query,&mut u.len,out.str());}None=>u.editor.delete(&mut u.query,&mut u.len,true)}changed(u);}
+  if edited{changed(u);}
   if Input::is_key_pressed(Key::Delete){u.editor.delete(&mut u.query,&mut u.len,false);changed(u);}
  }else{
   for(key,bit)in[(Key::Up,13),(Key::Down,15),(Key::Left,12),(Key::Right,14),(Key::Enter,0),(Key::Tab,7),(Key::LeftBracket,8),(Key::RightBracket,9),(Key::F8,5),(Key::F9,2),(Key::F10,4)]{if Input::is_key_pressed(key){u.desktop=true;*p|=1<<bit;}}
