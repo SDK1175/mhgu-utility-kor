@@ -24,9 +24,11 @@ def fetch(path,offline=False):
 def item_index(soup):
     items={}
     for a in soup.select('a[href]'):
-        if re.fullmatch(r'https://mhgu.kiranico.com/item/[a-z0-9]+',a['href']):
-            name=text(a)
-            if name: items[identity(a['href'])]={'id':identity(a['href']),'name':name,'search':key(name),'source_url':a['href'],'details_loaded':False}
+        # Kiranico writes these links absolute or site-relative depending on the response; both are the item page.
+        m=re.fullmatch(r'(?:https://mhgu\.kiranico\.com)?(/item/[a-z0-9]+)',a['href'])
+        if m:
+            name=text(a);url=BASE+m[1]
+            if name: items[identity(url)]={'id':identity(url),'name':name,'search':key(name),'source_url':url,'details_loaded':False}
     return items
 
 def weapon_index(soup,kind):
