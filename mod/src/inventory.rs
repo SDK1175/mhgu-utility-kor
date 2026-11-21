@@ -1,5 +1,9 @@
 //! Read-only MHGU 1.4 local inventory. Box capacity follows sItemBox's own
 //! expansion flags; only the 24 physical material-pouch slots are counted.
+// Korean fork (MHXX Recomp): GU's data at base+offset sits elsewhere in MHXX, and the port says where (an older port,
+// or GU itself: 0, the address stays GU's).
+#[cfg(not(test))]unsafe extern "C"{fn mhxx_gu_data(offset:u32)->u32;}
+fn gd(b:u32,off:u32)->u32{#[cfg(not(test))]{let a=unsafe{mhxx_gu_data(off)};if a!=0{return a;}}b.wrapping_add(off)}
 const ITEMS:usize=4096;
 #[derive(Clone,Copy,Default)]pub struct Counts{pub box_count:u32,pub pouch_count:u32}
 impl Counts{pub fn total(self)->u32{self.box_count+self.pouch_count}}
@@ -12,13 +16,13 @@ fn slots(m:&impl Memory,p:u32,n:usize,counts:&mut [Counts;ITEMS],pouch:bool)->bo
 }
 fn read(m:&impl Memory,base:u32,counts:&mut [Counts;ITEMS])->bool{
  counts.fill(Counts::default());
- let bx=m.word(base+0x1858438);let pouch=m.word(base+0x18584b8);let save=m.word(base+0x1897f78);
+ let bx=m.word(gd(base,0x1858438));let pouch=m.word(gd(base,0x18584b8));let save=m.word(gd(base,0x1897f78));
  if !valid(bx)||!valid(pouch)||!valid(save){return false;}
- if m.word(bx)!=base+0x173f5b4||m.word(pouch)!=base+0x173f5f8||m.word(save)!=base+0x176af48{return false;}
+ if m.word(bx)!=gd(base,0x173f5b4)||m.word(pouch)!=gd(base,0x173f5f8)||m.word(save)!=gd(base,0x176af48){return false;}
  let n=capacity(m.word(save+0x958),m.word(save+0x3614));
  if !slots(m,bx,n,counts,false)||!slots(m,pouch,24,counts,true){return false;}
  // Do not publish a partial snapshot during save-slot or scene replacement.
- m.word(base+0x1858438)==bx&&m.word(base+0x18584b8)==pouch&&m.word(base+0x1897f78)==save
+ m.word(gd(base,0x1858438))==bx&&m.word(gd(base,0x18584b8))==pouch&&m.word(gd(base,0x1897f78))==save
 }
 #[cfg(not(test))]mod live{
  use super::*;use core::cell::UnsafeCell;

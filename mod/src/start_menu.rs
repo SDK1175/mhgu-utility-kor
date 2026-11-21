@@ -1,5 +1,9 @@
 //! Additive MHGU 1.4 quest Start-menu entry. All thirteen stock rows survive.
 //! Runtime addresses in the RE notes use image + 0x200000. Forge uses image.
+// Korean fork (MHXX Recomp): GU's data at base+offset sits elsewhere in MHXX, and the port says where (an older port,
+// or GU itself: 0, the address stays GU's).
+#[cfg(not(test))]unsafe extern "C"{fn mhxx_gu_data(offset:u32)->u32;}
+fn gd(b:u32,off:u32)->u32{#[cfg(not(test))]{let a=unsafe{mhxx_gu_data(off)};if a!=0{return a;}}b.wrapping_add(off)}
 use core::{mem,ptr,sync::atomic::{AtomicBool,Ordering}};
 const STOCK:u32=13;
 const TOTAL:u32=14;
@@ -13,7 +17,7 @@ fn label()->u32{c"MHGU Utility".as_ptr()as u32}
 fn valid(p:u32)->bool{(0x08000000..0xa7ff0000).contains(&p)&&p&3==0}
 unsafe fn read(p:u32,off:u32)->u32{unsafe{ptr::read_unaligned((p+off)as *const u32)}}
 unsafe fn write(p:u32,off:u32,v:u32){unsafe{ptr::write_unaligned((p+off)as *mut u32,v)}}
-unsafe fn object(p:u32)->bool{unsafe{valid(p)&&read(p,0)==forge::mem::text_addr()+VTABLE}}
+unsafe fn object(p:u32)->bool{unsafe{valid(p)&&read(p,0)==gd(forge::mem::text_addr(),VTABLE)}}
 unsafe fn owned(p:u32)->bool{unsafe{object(p)&&read(p,0xac)==TOTAL&&read(p,0xc4)==TOTAL&&valid(read(p,0xa8))&&valid(read(p,0xc0))&&read(read(p,0xa8),STOCK*8+4)==label()}}
 unsafe fn row(p:u32){unsafe{let rows=read(p,0xa8);write(rows,STOCK*8,1);write(rows,STOCK*8+4,label());}}
 /// Only the game update thread calls these hooks; the request crosses to render.
@@ -26,11 +30,11 @@ pub fn take_open()->bool{compendium_start_take_open()}
  if !valid(old_rows)||!valid(old_hints){return result;}
  // Exact allocator used by both vectors in 0x877b48 and freed by 0x86e3ac.
  let heap_for:unsafe extern "C" fn(u32)->u32=mem::transmute(forge::mem::text_addr()+0x7aa47c);
- let heap=heap_for(forge::mem::text_addr()+0x191eb18);if !valid(heap){return result;}
+ let heap=heap_for(gd(forge::mem::text_addr(),0x191eb18));if !valid(heap){return result;}
  // Heap objects are in the heap; their relocated vtables are in main's data
  // segment, below 0x08000000 when main loads at its real 0x00200000 base.
  let base=forge::mem::text_addr();let table=read(heap,0);
- if table&3!=0||!(base+0x172f000..=base+0x184ad78-0x38).contains(&table){return result;}
+ if table&3!=0||!((base+0x172f000..=base+0x184ad78-0x38).contains(&table)||(0x0020_0000..0x0240_0000).contains(&table)){return result;}
  let allocate=read(table,0x1c);let release=read(table,0x34);
  if [allocate,release].iter().any(|&f|f&3!=0||!(base..base+0x13f1dec).contains(&f)){return result;}
  let alloc:unsafe extern "C" fn(u32,u32,u32)->u32=mem::transmute(allocate);

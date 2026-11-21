@@ -1,6 +1,10 @@
 //! Read-only progression availability. Native creation conditions are opaque
 //! quest/progress flags, never rarity or HR. Material *sources* are tested;
 //! current item quantities and zeny are never inspected.
+// Korean fork (MHXX Recomp): GU's data at base+offset sits elsewhere in MHXX, and the port says where (an older port,
+// or GU itself: 0, the address stays GU's).
+#[cfg(not(test))]unsafe extern "C"{fn mhxx_gu_data(offset:u32)->u32;}
+fn gd(b:u32,off:u32)->u32{#[cfg(not(test))]{let a=unsafe{mhxx_gu_data(off)};if a!=0{return a;}}b.wrapping_add(off)}
 pub trait Memory{fn word(&self,address:u32)->Option<u32>;fn byte(&self,address:u32)->Option<u8>;}
 fn valid(p:u32)->bool{(0x08000000..0xa7fb0000).contains(&p)&&p&3==0}
 fn bit(m:&impl Memory,p:u32,n:u32)->Option<bool>{Some(m.byte(p.checked_add(n/8)?)?&(1<<(n&7))!=0)}
@@ -9,11 +13,11 @@ fn bit(m:&impl Memory,p:u32,n:u32)->Option<bool>{Some(m.byte(p.checked_add(n/8)?
 /// table maps the remaining gates to story bits in sMhGameData +0x500.
 pub fn gate(m:&impl Memory,b:u32,g:u16)->Option<bool>{
  if g<4{return Some(true);}if g>111{return None;}
- let save=m.word(b+0x1897f78)?;if !valid(save){return None;}
+ let save=m.word(gd(b,0x1897f78))?;if !valid(save){return None;}
  if (88..=105).contains(&g){return bit(m,save+0x3614,u32::from(g)-62);}
  if g==110{
   // f_723da4 maps quest IDs through the resident 12-byte quest index.
-  let manager=m.word(b+0x188ad90)?;if !valid(manager){return None;}
+  let manager=m.word(gd(b,0x188ad90))?;if !valid(manager){return None;}
   let resource=m.word(manager+0xb4)?;if !valid(resource){return None;}
   let count=m.word(resource+0x64)?;let rows=m.word(resource+0x6c)?;
   if count==0||count>20000||!valid(rows){return None;}
@@ -24,8 +28,8 @@ pub fn gate(m:&impl Memory,b:u32,g:u16)->Option<bool>{
    if index==0{unknown=true;continue;}if bit(m,save+0x42c,index)?{return Some(true);}
   }return if unknown{None}else{Some(false)};
  }
- let progress=m.word(b+0x1884c58)?;if !valid(progress){return None;}
- let n=m.word(b+0x162ea7c+u32::from(g)*4)?;if n>16383{return None;}bit(m,progress+0x500,n)
+ let progress=m.word(gd(b,0x1884c58))?;if !valid(progress){return None;}
+ let n=m.word(gd(b,0x162ea7c)+u32::from(g)*4)?;if n>16383{return None;}bit(m,progress+0x500,n)
 }
 /// AND of the recipe's progression condition and every ingredient's potential
 /// acquisition. Unknown ingredients do not become fabricated availability.
@@ -54,12 +58,12 @@ pub fn ingredient_available(source:Option<bool>,acquired:Option<bool>)->Option<b
  struct Direct;impl Memory for Direct{fn word(&self,a:u32)->Option<u32>{Some(word(a))}fn byte(&self,a:u32)->Option<u8>{Some(byte(a))}}
  fn word(p:u32)->u32{unsafe{ptr::read_volatile(p as *const u32)}}fn byte(p:u32)->u8{unsafe{ptr::read_volatile(p as *const u8)}}
  fn identity()->Option<(u32,u32,u32)>{
-  let b=forge::mem::text_addr();let gc=word(b+0x188ca48);let save=word(b+0x1897f78);let manager=word(b+0x1885b58);
-  if !valid(gc)||!valid(save)||!valid(manager)||byte(gc+0x4c)>7||word(save)!=b+0x176af48{return None;}
+  let b=forge::mem::text_addr();let gc=word(gd(b,0x188ca48));let save=word(gd(b,0x1897f78));let manager=word(gd(b,0x1885b58));
+  if !valid(gc)||!valid(save)||!valid(manager)||byte(gc+0x4c)>7||word(save)!=gd(b,0x176af48){return None;}
   let slot=word(gc+0x30);if slot>=4{return None;}let actor=word(manager+0x1c+slot*4);if !valid(actor){return None;}
   // The same pure quest appearance and entry-check signatures used by the
   // quest planner. Native creation-gate table/getter guards pin MHGU 1.4.
-  if word(b+0x54af8c)!=0xe92d4830||word(b+0x54af90)!=0xe1a05002||word(b+0x54ce08)!=0xe92d47f0||word(b+0x3ba50c)!=0xe92d48f0||word(b+0x5615bc)!=0xe3500004||word(b+0x4a9390)!=0xe1d000bc||word(b+0x162ea7c+20*4)!=387{return None;}
+  if word(b+0x54af8c)!=0xe92d4830||word(b+0x54af90)!=0xe1a05002||word(b+0x54ce08)!=0xe92d47f0||word(b+0x3ba50c)!=0xe92d48f0||word(b+0x5615bc)!=0xe3500004||word(b+0x4a9390)!=0xe1d000bc||word(gd(b,0x162ea7c)+20*4)!=387{return None;}
   Some((save,gc,actor))
  }
  /// Guard for a prepared cache; false after departure/character replacement.
@@ -74,7 +78,7 @@ pub fn ingredient_available(source:Option<bool>,acquired:Option<bool>)->Option<b
   if q.entry.contains(&255){return None;}let b=forge::mem::text_addr();
   let mut data=[0u32;68];let bytes=core::slice::from_raw_parts_mut(data.as_mut_ptr()as *mut u8,272);bytes[0x16..0x19].copy_from_slice(&q.entry);
   let mut resource=[0u32;28];resource[0x64/4]=1;resource[0x6c/4]=data.as_ptr()as u32;
-  let r=if q.id>=1000000{let manager=word(b+0x188ae38);if !valid(manager){return None;}let lookup:unsafe extern "C" fn(u32,u32)->u32=mem::transmute((b+0x3ba50c)as usize);let r=lookup(manager,q.id);if !valid(r){return None;}r}else{resource.as_ptr()as u32};
+  let r=if q.id>=1000000{let manager=word(gd(b,0x188ae38));if !valid(manager){return None;}let lookup:unsafe extern "C" fn(u32,u32)->u32=mem::transmute((b+0x3ba50c)as usize);let r=lookup(manager,q.id);if !valid(r){return None;}r}else{resource.as_ptr()as u32};
   let check:unsafe extern "C" fn(u32,u32)->u32=mem::transmute((b+0x54ce08)as usize);Some(check(r,actor)==1)
  }}
  /// At most sixteen native quest checks per frame. True means preparation is
@@ -102,7 +106,7 @@ pub fn ingredient_available(source:Option<bool>,acquired:Option<bool>)->Option<b
   // when currently indexed quest sources do not prove acquisition. Never
   // stock counts; this evidence cannot override a false recipe gate.
   let ids=crate::weapon_data::GAME_ITEMS;let native=ids.binary_search_by_key(&item,|r|r.0).ok().and_then(|i|ids.get(i)).map(|r|r.1);
-  let acquired=native.and_then(|native|{let p=word(forge::mem::text_addr()+0x18583a8);if !valid(p)||native>=4096{None}else{bit(&Direct,p+0x9c,u32::from(native))}});
+  let acquired=native.and_then(|native|{let p=word(gd(forge::mem::text_addr(),0x18583a8));if !valid(p)||native>=4096{None}else{bit(&Direct,p+0x9c,u32::from(native))}});
   ingredient_available(v,acquired)
  }}
  fn recipe(g:u16,materials:&[(u16,u8)])->Option<bool>{

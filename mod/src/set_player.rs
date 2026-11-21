@@ -21,6 +21,13 @@ pub trait Memory{
  /// Pure table lookup, never f_2ddd48 or another cache-building routine.
  fn equipment_slots(&self,_record:u32)->Option<u8>{None}
 }
+#[cfg(not(test))]unsafe extern "C"{fn mhxx_gu_data(offset:u32)->u32;}
+/// Korean fork (MHXX Recomp): GU's data at base+offset sits elsewhere in MHXX, and the port says where (an older port,
+/// or GU itself: 0, the address stays GU's).
+pub fn gd(b:u32,off:u32)->u32{#[cfg(not(test))]{let a=unsafe{mhxx_gu_data(off)};if a!=0{return a;}}b.wrapping_add(off)}
+/// An address in the game's image: GU's (base..base+len), or on the port MHXX's own (where vtables and the functions
+/// they hold really are).
+pub fn in_image(b:u32,v:u32,len:u32)->bool{(v>=b&&v<b.wrapping_add(len))||(0x0020_0000..0x0240_0000).contains(&v)}
 fn valid(p:u32)->bool{(0x08000000..0xa7fb0000).contains(&p)&&p&3==0}
 pub fn capacity(flags:u32,expansions:u32)->usize{1000+200*((flags>>21&1)+(flags>>22&1)+(expansions&7).count_ones())as usize}
 // Native weapon level records are inline objects (e.g. f_3327b0 uses
@@ -28,8 +35,8 @@ pub fn capacity(flags:u32,expansions:u32)->usize{1000+200*((flags>>21&1)+(flags>
 // native helper's zero-on-missing-resource return as known zero slots.
 pub fn decode_weapon_row(m:&impl Memory,b:u32,row:u32)->Option<u8>{
  if !valid(row){return None;}let v=m.word(row)?;
- if v&3!=0||v<b||v>=b+0x1850000{return None;}
- let f=m.word(v+0x38)?;if f&3!=0||f<b||f>=b+0x13f2000{return None;}
+ if v&3!=0||!in_image(b,v,0x1850000){return None;}
+ let f=m.word(v+0x38)?;if f&3!=0||!in_image(b,f,0x13f2000){return None;}
  let load=m.word(f)?;if load&0xfffff000!=0xe5d00000||m.word(f+4)!=Some(0xe12fff1e){return None;}
  let offset=load&0xfff;if offset>=64{return None;}
  m.byte(row.checked_add(offset)?).filter(|n|*n<=3)
@@ -39,11 +46,11 @@ pub static mut DIAG:[u32;5]=[0;5];
 fn d(step:u32,a:u32,b:u32,c:u32,e:u32){unsafe{DIAG=[step,a,b,c,e];}}
 fn capture(m:&impl Memory,b:u32,s:&mut Snapshot)->Result<(),Status>{d(1,b,0,0,0);
  let unavailable=Status::Unavailable;let invalid=Status::InvalidData;
- let save=m.word(b.checked_add(0x1897f78).ok_or(invalid)?).ok_or(unavailable)?;
- let bx=m.word(b+0x1856fe8).ok_or(unavailable)?;let gc=m.word(b+0x188ca48).ok_or(unavailable)?;let manager=m.word(b+0x1885b58).ok_or(unavailable)?;d(2,save,bx,gc,manager);
+ let save=m.word(gd(b,0x1897f78)).ok_or(unavailable)?;
+ let bx=m.word(gd(b,0x1856fe8)).ok_or(unavailable)?;let gc=m.word(gd(b,0x188ca48)).ok_or(unavailable)?;let manager=m.word(gd(b,0x1885b58)).ok_or(unavailable)?;d(2,save,bx,gc,manager);
  if !valid(save)||!valid(bx)||!valid(gc)||!valid(manager){return Err(unavailable);}
- d(3,m.word(save).unwrap_or(1),b+0x176af48,m.word(bx).unwrap_or(1),b+0x173e3d0);
- if m.word(save)!=Some(b+0x176af48)||m.word(bx)!=Some(b+0x173e3d0){return Err(Status::UnsupportedBuild);}
+ d(3,m.word(save).unwrap_or(1),gd(b,0x176af48),m.word(bx).unwrap_or(1),gd(b,0x173e3d0));
+ if m.word(save)!=Some(gd(b,0x176af48))||m.word(bx)!=Some(gd(b,0x173e3d0)){return Err(Status::UnsupportedBuild);}
  // Town-only capture avoids departure/replacement and Prowler equipment data.
  d(4,m.byte(gc+0x4c).map_or(999,u32::from),0,0,0);if m.byte(gc+0x4c).ok_or(unavailable)?>7{return Err(unavailable);}
  let local=m.word(gc+0x30).ok_or(unavailable)?;d(5,local,0,0,0);if local>=4{return Err(invalid);}
@@ -81,7 +88,7 @@ fn capture(m:&impl Memory,b:u32,s:&mut Snapshot)->Result<(),Status>{d(1,b,0,0,0)
  }
  // Do not publish a snapshot across character/scene replacement.
  d(13,0,0,0,0);
- if m.word(b+0x1897f78)!=Some(save)||m.word(b+0x1856fe8)!=Some(bx)||m.word(b+0x188ca48)!=Some(gc)||m.word(b+0x1885b58)!=Some(manager)||m.word(gc+0x30)!=Some(local)||m.word(manager+0x1c+local*4)!=Some(actor)||m.word(actor+0x13c4)!=Some(pd)||m.word(save+0x958)!=Some(flags)||m.word(save+0x3614)!=Some(expansions)||m.byte(gc+0x4c).is_none_or(|v|v>7)||m.byte(pd+0x4d8)!=Some(gender)||m.word(pd+0x14c)!=Some(wt)||m.half(pd+0x554)!=Some(hr)||m.half(weapon+4)!=Some(weapon_bits)||m.half(weapon+6)!=Some(weapon_id)||m.equipment_slots(weapon)!=Some(slots){return Err(Status::Changed);}
+ if m.word(gd(b,0x1897f78))!=Some(save)||m.word(gd(b,0x1856fe8))!=Some(bx)||m.word(gd(b,0x188ca48))!=Some(gc)||m.word(gd(b,0x1885b58))!=Some(manager)||m.word(gc+0x30)!=Some(local)||m.word(manager+0x1c+local*4)!=Some(actor)||m.word(actor+0x13c4)!=Some(pd)||m.word(save+0x958)!=Some(flags)||m.word(save+0x3614)!=Some(expansions)||m.byte(gc+0x4c).is_none_or(|v|v>7)||m.byte(pd+0x4d8)!=Some(gender)||m.word(pd+0x14c)!=Some(wt)||m.half(pd+0x554)!=Some(hr)||m.half(weapon+4)!=Some(weapon_bits)||m.half(weapon+6)!=Some(weapon_id)||m.equipment_slots(weapon)!=Some(slots){return Err(Status::Changed);}
  s.gender=Some(gender);s.hunter=Some(hunter);s.weapon_slots=Some(slots);s.hr=Some(hr);s.status=Status::Ready;Ok(())
 }
 pub fn decode(m:&impl Memory,base:u32,out:&mut Snapshot)->Result<(),Status>{out.invalidate(Status::Unavailable);let r=capture(m,base,out);if let Err(status)=r{out.invalidate(status);}r}
@@ -103,13 +110,13 @@ pub fn decode(m:&impl Memory,base:u32,out:&mut Snapshot)->Result<(),Status>{out.
    // f_33c208 weapon switch reads these resident tables. Check the table and
    // its count before calling its resolver; a missing resource also yields0
    // from f_2db5c4 and must not masquerade as a valid zero-slot weapon.
-   let root=self.word(self.base+0x1856b18)?;d(21,root,ty,id,0);if !valid(root){return None;}
+   let root=self.word(gd(self.base,0x1856b18))?;d(21,root,ty,id,0);if !valid(root){return None;}
    let offset=0x50+4*(ty-7-u32::from(ty>12));let table=self.word(root+offset)?;
    d(22,table,self.word(table+0x64).unwrap_or(1),id,0);if !valid(table)||id>=self.word(table+0x64)?{return None;}
    let resolve:unsafe extern "C" fn(u32,u32)->u32=unsafe{mem::transmute(self.base+0x13f03c)};
    let resource=unsafe{resolve(root,record)};d(23,resource,0,0,0);if !valid(resource){return None;}
-   let vtable=self.word(resource)?;d(24,vtable,self.word(vtable+0xd8).unwrap_or(1),0,0);if vtable&3!=0||vtable<self.base||vtable>=self.base+0x1850000{return None;}
-   let level_getter=self.word(vtable+0xd8)?;if level_getter&3!=0||level_getter<self.base||level_getter>=self.base+0x13f2000{return None;}
+   let vtable=self.word(resource)?;d(24,vtable,self.word(vtable+0xd8).unwrap_or(1),0,0);if vtable&3!=0||!in_image(self.base,vtable,0x1850000){return None;}
+   let level_getter=self.word(vtable+0xd8)?;if level_getter&3!=0||!in_image(self.base,level_getter,0x13f2000){return None;}
    // The weapon branch of f_2db5c4 first resolves the selected upgrade level;
    // a null level row also makes that native helper return0.
    let level=(self.half(record+4)?>>5)&31;

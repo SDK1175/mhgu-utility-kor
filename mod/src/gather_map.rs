@@ -1,5 +1,9 @@
 //! Independent native item sprites under the game's own map parent.
 //! No monster slots, map textures or Map Assist hooks are replaced.
+// Korean fork (MHXX Recomp): GU's data at base+offset sits elsewhere in MHXX, and the port says where (an older port,
+// or GU itself: 0, the address stays GU's).
+#[cfg(not(test))]unsafe extern "C"{fn mhxx_gu_data(offset:u32)->u32;}
+fn gd(b:u32,off:u32)->u32{#[cfg(not(test))]{let a=unsafe{mhxx_gu_data(off)};if a!=0{return a;}}b.wrapping_add(off)}
 use core::{mem,ptr};
 use crate::gather;
 const NONE:u32=u32::MAX;
@@ -16,7 +20,7 @@ static mut DROP_LAYOUT:u32=0;
 static mut UPDATE_HOOK:Hook=Hook([0;19]);
 static mut DROP_HOOK:Hook=Hook([0;19]);
 unsafe extern "C"{#[link_name="forge_hook_create"]fn hook(out:*mut Hook,target:u32,detour:u32,original:*mut u32)->*mut Hook;}
-fn address(pc:u32)->u32{forge::mem::text_addr()+pc-0x200000}
+fn address(pc:u32)->u32{gd(forge::mem::text_addr(),pc-0x200000)}
 fn valid(p:u32,size:u32)->bool{p>=0x08000000&&p&3==0&&p.checked_add(size).is_some_and(|end|end<=0xa8000000)}
 unsafe fn read(p:u32,offset:u32)->u32{unsafe{ptr::read_unaligned((p+offset)as *const u32)}}
 unsafe fn call1(pc:u32,a:u32)->u32{unsafe{let f:unsafe extern "C" fn(u32)->u32=mem::transmute(address(pc));f(a)}}

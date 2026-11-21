@@ -1,4 +1,8 @@
 //! Quest coverage is factual; quantities are goals, never promised drops.
+// Korean fork (MHXX Recomp): GU's data at base+offset sits elsewhere in MHXX, and the port says where (an older port,
+// or GU itself: 0, the address stays GU's).
+#[cfg(not(test))]unsafe extern "C"{fn mhxx_gu_data(offset:u32)->u32;}
+fn gd(b:u32,off:u32)->u32{#[cfg(not(test))]{let a=unsafe{mhxx_gu_data(off)};if a!=0{return a;}}b.wrapping_add(off)}
 #[derive(Clone,Copy)]pub struct Need{pub item:u16,pub quantity:u32}
 pub struct Quest{pub entry:[u8;3],pub id:u32,pub name:&'static str,pub loc:u8,pub rank:u8,pub stars:u8,pub hub:&'static str,pub prowler:bool,pub targets:&'static[u8],pub monsters:&'static[u8]}
 pub struct Source{pub item:u16,pub entity:u16,pub rank:u8,pub kind:u8,pub zone:u8}
@@ -68,17 +72,17 @@ pub fn best_groups(quests:&[Quest],sources:&[Source],needs:&[Need],unlocked:&[bo
  pub fn state()->&'static State{unsafe{&*STATE.0.get()}}
  fn valid(p:u32)->bool{(0x08000000..0xa7ff0000).contains(&p)&&p&3==0}
  fn word(p:u32)->u32{unsafe{ptr::read_volatile(p as *const u32)}}
- fn ready()->bool{let b=forge::mem::text_addr();let gc=word(b+0x188ca48);valid(gc)&&unsafe{ptr::read_volatile((gc+0x4c)as *const u8)}<8&&valid(word(b+0x1897f78))&&valid(word(b+0x188ae38))&&word(b+0x54af8c)==0xe92d4830&&word(b+0x54af90)==0xe1a05002&&word(b+0x54ce08)==0xe92d47f0&&word(b+0x3ba50c)==0xe92d48f0}
+ fn ready()->bool{let b=forge::mem::text_addr();let gc=word(gd(b,0x188ca48));valid(gc)&&unsafe{ptr::read_volatile((gc+0x4c)as *const u8)}<8&&valid(word(gd(b,0x1897f78)))&&valid(word(gd(b,0x188ae38)))&&word(b+0x54af8c)==0xe92d4830&&word(b+0x54af90)==0xe1a05002&&word(b+0x54ce08)==0xe92d47f0&&word(b+0x3ba50c)==0xe92d48f0}
  // The native counter tests these two entry conditions (HR, equipment,
  // hunter type, etc.) separately from story/download unlocks. Use its checker.
  fn eligible(q:&Quest)->bool{unsafe{
-  if q.entry.contains(&255){return false;}let b=forge::mem::text_addr();let manager=word(b+0x1885b58);let gc=word(b+0x188ca48);let slot=word(gc+0x30);if !valid(manager)||slot>=4{return false;}
+  if q.entry.contains(&255){return false;}let b=forge::mem::text_addr();let manager=word(gd(b,0x1885b58));let gc=word(gd(b,0x188ca48));let slot=word(gc+0x30);if !valid(manager)||slot>=4{return false;}
   let actor=word(manager+0x1c+4*slot);if !valid(actor){return false;}
   // Exact serialized entry fields in a read-only native resource view. The
   // checker only requests record 0 through rQuestData +0x64/+0x6c.
   let mut data=[0u32;68];let bytes=core::slice::from_raw_parts_mut(data.as_mut_ptr()as *mut u8,272);bytes[0x16..0x19].copy_from_slice(&q.entry);
   let mut resource=[0u32;28];resource[0x64/4]=1;resource[0x6c/4]=data.as_ptr()as u32;
-  let r=if q.id>=1000000{let lookup:unsafe extern "C" fn(u32,u32)->u32=mem::transmute(b+0x3ba50c);let r=lookup(word(b+0x188ae38),q.id);if !valid(r){return false;}r}else{resource.as_ptr()as u32};
+  let r=if q.id>=1000000{let lookup:unsafe extern "C" fn(u32,u32)->u32=mem::transmute(b+0x3ba50c);let r=lookup(word(gd(b,0x188ae38)),q.id);if !valid(r){return false;}r}else{resource.as_ptr()as u32};
   let check:unsafe extern "C" fn(u32,u32)->u32=mem::transmute(b+0x54ce08);check(r,actor)==1
  }}
  fn stock_member(s:&mut State,item:u16){

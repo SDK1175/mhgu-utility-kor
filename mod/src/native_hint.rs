@@ -1,6 +1,10 @@
 //! Native MHGU 1.4 cUIOUnderKeyAssign row, not an ImGui imitation.
 //! The smithy uses two table-driven actions plus a custom Help row. The fourth
 //! row is reserved only while a verified weapon-upgrade selection is active.
+// Korean fork (MHXX Recomp): GU's data at base+offset sits elsewhere in MHXX, and the port says where (an older port,
+// or GU itself: 0, the address stays GU's).
+#[cfg(not(test))]unsafe extern "C"{fn mhxx_gu_data(offset:u32)->u32;}
+fn gd(b:u32,off:u32)->u32{#[cfg(not(test))]{let a=unsafe{mhxx_gu_data(off)};if a!=0{return a;}}b.wrapping_add(off)}
 use core::{mem,ptr};
 static mut ORIGINAL:u32=0;
 static mut OBJECT:u32=0;
@@ -12,7 +16,7 @@ unsafe extern "C"{#[link_name="forge_hook_create"]fn create(out:*mut Hook,target
 fn label(n:u8)->*const u8{match n{2=>c"Remove from wishlist".as_ptr().cast(),3=>c"Wishlist save failed".as_ptr().cast(),_=>c"Add to wishlist".as_ptr().cast()}}
 unsafe fn read(object:u32,offset:u32)->u32{unsafe{ptr::read_unaligned((object+offset)as *const u32)}}
 unsafe fn write(object:u32,offset:u32,value:u32){unsafe{ptr::write_unaligned((object+offset)as *mut u32,value)}}
-unsafe fn valid(object:u32)->bool{unsafe{(0x08000000..0xa8000000).contains(&object)&&object&3==0&&read(object,0)==forge::mem::text_addr()+0x1777c60}}
+unsafe fn valid(object:u32)->bool{unsafe{(0x08000000..0xa8000000).contains(&object)&&object&3==0&&read(object,0)==gd(forge::mem::text_addr(),0x1777c60)}}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn compendium_native_hint_refresh(object:u32,mode:u32,flags:u32,force:u32){unsafe{
  let original:unsafe extern "C" fn(u32,u32,u32,u32)=mem::transmute(ORIGINAL);
