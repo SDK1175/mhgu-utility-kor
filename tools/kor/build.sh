@@ -10,9 +10,12 @@ GU=/f/MHXX_port/gu_romfs/0100770008DD8000
 DEST=/f/MHXX_port/MHXXRecomp/build/mods/hunters-compendium/romfs/nativeNX/plugins
 cd "$(dirname "$0")/../.."
 
-echo "== 1/5 latest code"
-git checkout -- mod/Cargo.lock mod/src/ko_dict.rs 2>/dev/null || true   # (files the build rewrites)
-git pull --ff-only
+if [ "${1:-}" != "--pulled" ]; then
+  echo "== 1/5 latest code"
+  git checkout -- mod/Cargo.lock mod/src/ko_dict.rs 2>/dev/null || true   # (files the build rewrites)
+  git pull --ff-only
+  exec bash tools/kor/build.sh --pulled   # (the rest from the script just pulled, not the old one)
+fi
 
 echo "== 2/5 libraries"
 (cd mod && cargo +nightly fetch -q)
@@ -36,9 +39,10 @@ mkdir -p "$DEST"
 # Weapon and armor names: the GU Korean patch's tables, from this PC's copy (read by the plugin at run time; never shipped)
 KP=/f/MHXX_port/MHGU-KoreanPatch/romfs/nativeNX/eng/table
 if [ -d "$KP" ]; then
-  mkdir -p "$DEST/../eng/table"
-  cp "$KP"/*.gmd "$DEST/../eng/table/"
+  mkdir -p "$DEST/hunters-compendium-ko/table"
+  cp "$KP"/*.gmd "$DEST/hunters-compendium-ko/table/"
   echo "GU Korean patch tables: $(ls "$KP"/*.gmd | wc -l) copied"
+  if [ -d "$DEST/../eng" ]; then echo "WARNING: $DEST/../eng exists: MHXX will not start; move it out"; fi
 else
   echo "no GU Korean patch at $KP: weapon and armor names stay as the MHXX patch has them"
 fi

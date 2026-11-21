@@ -105,8 +105,9 @@ def main():
         if m:  # MHXX keeps the weapon names as table/weaponNNMsgData.wNNm
             cands.append(f'nativeNX/table/weapon{m[1]}MsgData.w{m[1]}m')  # (after the patch's _jpn.gmd)
         # The GU Korean patch's own table, when the user copied it in (build.sh does): weapon and armor names
-        # the MHXX patch left in Japanese. Read from the user's files only, never shipped.
-        cands.append('nativeNX/eng/' + path.relative_to(eng).as_posix())
+        # the MHXX patch left in Japanese. Read from the user's files only, never shipped. (In the plugin's own
+        # folder: a nativeNX/eng folder makes MHXX hang at start.)
+        cands.append('nativeNX/plugins/hunters-compendium-ko/' + path.relative_to(eng).as_posix())
         files.append(cands)
 
     ordered = sorted(keys, key=lambda s: s.encode('utf-8'))
