@@ -58,7 +58,7 @@ pub fn pointer(u:&mut Ui)->Option<(f32,f32)>{
 
 /// Keyboard equivalents use the same actions as controller hints.
 pub fn prompt(label:&str)->super::Text{use core::fmt::Write;let mut out=super::Text::new();let mut rest=label;
- let rules=[("X to edit","Ctrl+F to edit"),("Press R3","Press F8"),("B  Details","Enter"),("B:","Enter:"),("A:","Esc:"),("B  ","Enter  "),("A  ","Esc  "),("X  ","Ctrl+F  "),("Y  ","F9  "),("Y:","F9:"),("R3  ","F8  "),("R3:","F8:"),("L3  ","F10  "),("L3:","F10:"),("LB / RB","Tab"),("LT / RT","[ / ]"),("D-pad / left stick","Arrow keys"),("D-pad","Arrows"),("Right stick: scroll details","Mouse wheel: scroll details")];
+ let rules=[("X to edit","Ctrl+F to edit"),("Press R3","Press F8"),("B  Details","Enter"),("B:","Enter:"),("A:","Esc:"),("B  ","Enter  "),("A  ","Esc  "),("X  ","Ctrl+F  "),("Y  ","F9  "),("Y:","F9:"),("R3  ","F8  "),("R3:","F8:"),("L3  ","F10  "),("L3:","F10:"),("LB / RB","Tab"),("LT / RT","[ / ]"),("D-pad / left stick","Arrow keys"),("D-pad","Arrows"),("Right stick: scroll details","Mouse wheel: scroll details"),("방향키 / 왼쪽 스틱","화살표 키"),("방향키","화살표"),("오른쪽 스틱: 상세 스크롤","마우스 휠: 상세 스크롤"),("Y로","F9로")];
  while !rest.is_empty(){if let Some((from,to))=rules.iter().find(|(from,_)|rest.starts_with(from)&&(rest.len()==label.len()||label.as_bytes()[label.len()-rest.len()-1].is_ascii_whitespace())){let _=write!(out,"{}",to);rest=&rest[from.len()..];}else{let ch=rest.chars().next().unwrap();let _=write!(out,"{}",ch);rest=&rest[ch.len_utf8()..];}}
  out
 }

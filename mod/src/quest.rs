@@ -126,11 +126,11 @@ pub fn best_groups(quests:&[Quest],sources:&[Source],needs:&[Need],unlocked:&[bo
   unsafe{let s=&mut*STATE.0.get();if p&(1<<13)!=0{s.material=s.material.saturating_sub(1);}if p&(1<<15)!=0{s.material=(s.material+1).min(count.saturating_sub(1));}}
   if p&1!=0{if let Some((index,_))=display_needs().nth(state().material){open_need(u,index);}}
  }
- pub fn source_label(item:u16,qid:usize)->crate::Text{use core::fmt::Write;if item>=POINT_BASE{let mut t=crate::Text::new();let _=write!(t,"Eligible material options; each unit supplies points");return t;}let q=&quest_data::QUESTS[qid];let mut t=crate::Text::new();let mut zones=[false;32];let mut monster=false;let mut reward=false;
+ pub fn source_label(item:u16,qid:usize)->crate::Text{use core::fmt::Write;if item>=POINT_BASE{let mut t=crate::Text::new();let _=write!(t,"대상 소재 (개수마다 포인트를 채웁니다)");return t;}let q=&quest_data::QUESTS[qid];let mut t=crate::Text::new();let mut zones=[false;32];let mut monster=false;let mut reward=false;
   let start=quest_data::SOURCES.partition_point(|s|s.item<item);
   for s in quest_data::SOURCES[start..].iter().take_while(|s|s.item==item){if s.rank!=q.rank{continue;}match s.kind{0 if s.entity==q.loc as u16=>zones[s.zone as usize]=true,1 if q.monsters.contains(&(s.entity as u8))=>monster=true,2 if s.entity as usize==qid=>reward=true,_=>{}}}
-  for(i,&yes)in zones.iter().enumerate(){if yes{let sep=if t.str().is_empty(){""}else{", "};let _=write!(t,"{}{}",sep,world::ZONES[i]);}}
-  if monster{let sep=if t.str().is_empty(){""}else{" / "};let _=write!(t,"{}{}",sep,if target_source(q,item,quest_data::SOURCES,&[]){"Target monster drops"}else{"Incidental monster drops"});}if reward{let sep=if t.str().is_empty(){""}else{" / "};let _=write!(t,"{}Quest rewards",sep);}t
+  for(i,&yes)in zones.iter().enumerate(){if yes{let sep=if t.str().is_empty(){""}else{", "};let _=write!(t,"{}{}",sep,crate::ko::tr(world::ZONES[i]));}}
+  if monster{let sep=if t.str().is_empty(){""}else{" / "};let _=write!(t,"{}{}",sep,if target_source(q,item,quest_data::SOURCES,&[]){"목표 몬스터 소재"}else{"다른 몬스터 소재"});}if reward{let sep=if t.str().is_empty(){""}else{" / "};let _=write!(t,"{}퀘스트 보수",sep);}t
  }
 }
 #[cfg(not(test))]pub use live::*;

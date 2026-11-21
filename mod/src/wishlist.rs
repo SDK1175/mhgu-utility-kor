@@ -23,7 +23,7 @@ pub fn recipe(node:usize,index:usize)->Option<Recipe>{
  else{weapon_data::WEAPONS.get(node)?.recipes.get(index).map(|r|Recipe{label:r.label,price:r.price,items:Materials::Weapon(r.items)})}
 }
 pub fn name(node:usize)->&'static str{if node>=ARMOR_BASE{super::armor_data::ARMOR[node-ARMOR_BASE].name}else{world::TREE[node].name}}
-pub fn title(node:usize)->Text{let mut t=Text::new();let _=write!(t,"{}",name(node));if node<ARMOR_BASE{let _=write!(t," Lv{}",world::TREE[node].level);}t}
+pub fn title(node:usize)->Text{let mut t=Text::new();let _=write!(t,"{}",super::ko::tr(name(node)));if node<ARMOR_BASE{let _=write!(t," Lv{}",world::TREE[node].level);}t}
 pub fn load(){unsafe{let s=&mut *STATE.0.get();if s.loaded{return;}let mut bytes=[0;2048];if let Ok(text)=FILE.read(&mut bytes){s.loaded=true;for line in text.lines(){
  let Some((key,index))=line.rsplit_once(' ')else{continue;};let Ok(index)=index.parse::<usize>()else{continue;};
  let node=if let Some(key)=key.strip_prefix("armor:"){key.parse::<u32>().ok().and_then(|key|super::armor_data::ARMOR.iter().position(|a|a.key==key)).map(|i|ARMOR_BASE+i)}else{key.parse::<u32>().ok().and_then(|key|weapon_data::WEAPONS.iter().position(|w|w.key==key))};

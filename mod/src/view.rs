@@ -9,14 +9,14 @@ impl Canvas{
  fn v(&self,x:f32,y:f32)->ImVec2{ImVec2{x:self.x+x*self.s,y:self.y+y*self.s}}
  fn rect(&self,x:f32,y:f32,w:f32,h:f32,c:u32){self.d.add_rect_filled(self.v(x,y),self.v(x+w,y+h),c,1.0*self.s);}
  fn line(&self,x:f32,y:f32,x2:f32,y2:f32,c:u32){self.d.add_line(self.v(x,y),self.v(x2,y2),c,self.s);}
- fn text(&self,x:f32,y:f32,t:&str,c:u32,size:f32){super::game_ui::text(&self.d,self.f,size*self.s,self.v(x,y),c,t);}
- fn paragraph(&self,x:f32,y:f32,w:f32,t:&str,color:u32,size:f32,skip:usize,limit:usize)->usize{
+ fn text(&self,x:f32,y:f32,t:&str,c:u32,size:f32){super::game_ui::text(&self.d,self.f,size*self.s,self.v(x,y),c,super::ko::tr(t));}
+ fn paragraph(&self,x:f32,y:f32,w:f32,t:&str,color:u32,size:f32,skip:usize,limit:usize)->usize{let t=super::ko::tr(t);
   super::skill_text::lines(t,w,|ch|{let mut b=[0;4];super::game_ui::width(size,ch.encode_utf8(&mut b))},|i,line|{if i>=skip&&i-skip<limit{self.text(x,y+(i-skip)as f32*(size+4.0),line,color,size);}})
  }
- fn hint(&self,x:f32,y:f32,t:&str,c:u32,size:f32){if self.desktop{let translated=desktop::prompt(t);self.text(x,y,translated.str(),c,size);}else{self.text(x,y,t,c,size);}}
+ fn hint(&self,x:f32,y:f32,t:&str,c:u32,size:f32){let t=super::ko::tr(t);if self.desktop{let translated=desktop::prompt(t);self.text(x,y,translated.str(),c,size);}else{self.text(x,y,t,c,size);}}
  fn frame(&self,id:usize,x:f32,y:f32,w:f32,h:f32,color:u32){let p=self.v(x,y);super::game_ui::frame(&self.d,id,[p.x,p.y,w*self.s,h*self.s],color,self.s);}
  fn card(&self,x:f32,y:f32,w:f32,h:f32,selected:bool){self.rect(x,y,w,h,if selected{0xff274653}else{PANEL});self.frame(1,x,y,w,h,if selected{GOLD}else{0xffb5b0a5});}
- fn button(&self,index:usize,x:f32,y:f32,label:&str){if self.desktop{let mut t=Text::new();let _=write!(t,"{}  {}",["F9","Ctrl+F","Esc","Enter"][index],label);self.text(x,y+2.0,t.str(),TEXT,17.0);return;}let p=self.v(x,y);super::game_ui::button(&self.d,index,[p.x,p.y,23.0*self.s,23.0*self.s]);self.text(x+31.0,y+2.0,label,TEXT,17.0);}
+ fn button(&self,index:usize,x:f32,y:f32,label:&str){let label=super::ko::tr(label);if self.desktop{let mut t=Text::new();let _=write!(t,"{}  {}",["F9","Ctrl+F","Esc","Enter"][index],label);self.text(x,y+2.0,t.str(),TEXT,17.0);return;}let p=self.v(x,y);super::game_ui::button(&self.d,index,[p.x,p.y,23.0*self.s,23.0*self.s]);self.text(x+31.0,y+2.0,label,TEXT,17.0);}
  fn clip(&self,x:f32,y:f32,w:f32,h:f32){self.d.push_clip_rect(self.v(x,y),self.v(x+w,y+h),true);}
  fn endclip(&self){self.d.pop_clip_rect();}
  fn sprite(&self,id:usize,x:f32,y:f32,size:f32){let pos=self.v(x,y);super::ui_art::compendium_sprite_preview(id as u32,pos.x,pos.y,size*self.s,size*self.s);}
@@ -39,9 +39,9 @@ pub(super) fn draw(u:&mut Ui){
  for(i,name)in["Items","Weapons","Locations","Wishlist","Armor","Set Builder"].iter().enumerate(){let y=108.0+i as f32*55.0;c.hit(10.0,y-9.0,170.0,44.0,Action::Tab(i));if i==u.tab as usize{c.card(10.0,y-9.0,170.0,44.0,true);for row in 0..5{let width=(5-row)as f32;c.rect(20.0,y+6.0+row as f32, width,1.0,GOLD);c.rect(20.0,y+6.0-row as f32,width,1.0,GOLD);}}c.text(38.0,y,name,if i==u.tab as usize{GOLD}else{TEXT},20.0);}
  c.hint(18.0,420.0,"LB / RB",CYAN,16.0);c.text(18.0,445.0,"Switch section",MUTED,14.0);c.button(3,18.0,656.0,"Select");c.button(2,18.0,685.0,"Back");c.button(1,18.0,714.0,"Search");
  let mut t=Text::new();let _=write!(t,"{}",if u.builder&&u.detail==usize::MAX{"Set Builder"}else if super::item::active(u){"Item sources"}else if super::armor::active(u){"Armor"}else if super::weapon::active(u){"Weapon details"}else{["Item list","Weapon trees","Locations","Wishlist","Armor","Set Builder"][u.tab as usize]});c.text(211.0,62.0,t.str(),CYAN,23.0);
- let mut q=Text::new();if u.len==0&&!u.typing&&!u.pc_search{let _=write!(q,"Type to search...");}else{if u.pc_search{let cursor=u.editor.cursor.min(u.len);let _=write!(q,"Search: {}|{}",core::str::from_utf8(&u.query[..cursor]).unwrap_or(""),core::str::from_utf8(&u.query[cursor..u.len]).unwrap_or(""));}else{let _=write!(q,"Search: {}{}",core::str::from_utf8(&u.query[..u.len]).unwrap_or(""),if u.typing{"_"}else{""});}}c.card(735.0,55.0,522.0,38.0,u.pc_search);c.hit(735.0,55.0,522.0,38.0,Action::Search);c.clip(744.0,58.0,502.0,30.0);let caret=if u.pc_search{super::game_ui::width(17.0,"Search: ")+super::game_ui::width(17.0,core::str::from_utf8(&u.query[..u.editor.cursor.min(u.len)]).unwrap_or(""))}else{0.0};let offset=(caret-475.0).max(0.0);if u.pc_search{let(l,r)=u.editor.selection();if l<r{let start=super::game_ui::width(17.0,"Search: ")+super::game_ui::width(17.0,core::str::from_utf8(&u.query[..l]).unwrap_or(""))+if u.editor.cursor==l{super::game_ui::width(17.0,"|")}else{0.0};let width=super::game_ui::width(17.0,core::str::from_utf8(&u.query[l..r]).unwrap_or(""));c.rect(748.0+start-offset,62.0,width,23.0,0xff795e37);}}c.text(748.0-offset,64.0,q.str(),MUTED,17.0);c.endclip();
+ let mut q=Text::new();if u.len==0&&!u.typing&&!u.pc_search{let _=write!(q,"Type to search...");}else{if u.pc_search{let cursor=u.editor.cursor.min(u.len);let _=write!(q,"검색: {}|{}",core::str::from_utf8(&u.query[..cursor]).unwrap_or(""),core::str::from_utf8(&u.query[cursor..u.len]).unwrap_or(""));}else{let _=write!(q,"검색: {}{}",core::str::from_utf8(&u.query[..u.len]).unwrap_or(""),if u.typing{"_"}else{""});}}c.card(735.0,55.0,522.0,38.0,u.pc_search);c.hit(735.0,55.0,522.0,38.0,Action::Search);c.clip(744.0,58.0,502.0,30.0);let caret=if u.pc_search{super::game_ui::width(17.0,"검색: ")+super::game_ui::width(17.0,core::str::from_utf8(&u.query[..u.editor.cursor.min(u.len)]).unwrap_or(""))}else{0.0};let offset=(caret-475.0).max(0.0);if u.pc_search{let(l,r)=u.editor.selection();if l<r{let start=super::game_ui::width(17.0,"검색: ")+super::game_ui::width(17.0,core::str::from_utf8(&u.query[..l]).unwrap_or(""))+if u.editor.cursor==l{super::game_ui::width(17.0,"|")}else{0.0};let width=super::game_ui::width(17.0,core::str::from_utf8(&u.query[l..r]).unwrap_or(""));c.rect(748.0+start-offset,62.0,width,23.0,0xff795e37);}}c.text(748.0-offset,64.0,q.str(),MUTED,17.0);c.endclip();
  if u.tab==4&&!u.builder{for(i,label)in ["All","LR","HR","GR"].iter().enumerate(){let x=430.0+i as f32*69.0;c.card(x,57.0,61.0,34.0,u.armor_rank==i as i8-1);c.text(x+12.0,64.0,label,TEXT,18.0);c.hit(x,57.0,61.0,34.0,Action::ArmorRank(i as i8-1));}}
- if u.tab==2{for(i,rank)in["LR","HR","GR"].iter().enumerate(){let x=465.0+i as f32*75.0;c.card(x,57.0,64.0,34.0,i==u.rank as usize);c.hit(x,57.0,64.0,34.0,Action::Rank(i));c.text(x+18.0,64.0,rank,if i==u.rank as usize{CYAN}else{TEXT},18.0);}}
+ if u.tab==2{for(i,rank)in["하위","상위","G급"].iter().enumerate(){let x=465.0+i as f32*75.0;c.card(x,57.0,64.0,34.0,i==u.rank as usize);c.hit(x,57.0,64.0,34.0,Action::Rank(i));c.text(x+18.0,64.0,rank,if i==u.rank as usize{CYAN}else{TEXT},18.0);}}
  c.line(205.0,105.0,1264.0,105.0,EDGE);c.clip(205.0,110.0,1059.0,635.0);
  if u.builder&&u.detail==usize::MAX&&!u.typing{set_builder_view(&c,u);}else if u.typing{keyboard(&c,u);}else if u.detail!=usize::MAX{details(&c,u);}else if u.tab==1&&u.weapon>=0{tree(&c,u);}else if u.tab==2&&u.location>=0{gather(&c,u);}else if u.tab==1||u.tab==2{grid(&c,u);}else if u.tab==3&&u.planner{quest_plan(&c);}else if u.tab==3{wishlist_view(&c,u);}else if u.tab==4{armor_list(&c,u);}else if u.tab==0&&u.item_category<0&&u.len==0{item_categories(&c,u);}else{items(&c,u);}
  c.endclip();c.line(0.0,755.0,1280.0,755.0,EDGE);
@@ -64,7 +64,7 @@ fn keyboard(c:&Canvas,u:&Ui){
 }
 fn items(c:&Canvas,u:&Ui){if u.item_category>=0&&u.len==0{c.text(224.0,116.0,super::item_data::CATEGORIES[u.item_category as usize],CYAN,17.0);}let page=u.selected/11*11;for i in page..(page+11).min(u.count){let e=&catalog::ENTRIES[u.results[i]as usize];let y=145.0+(i-page)as f32*49.0;c.card(218.0,y,1034.0,43.0,i==u.selected);c.hit(218.0,y,1034.0,43.0,Action::Select(i));if let Some(icon)=super::ui_pixels::ITEMS.get(u.results[i]as usize){c.sprite(*icon as usize,232.0,y+8.0,26.0);}c.text(270.0,y+10.0,e.name,if i==u.selected{CYAN}else{TEXT},20.0);c.hint(1140.0,y+12.0,"B  Details",MUTED,15.0);}if u.count==0{c.hint(225.0,150.0,"No matches. X to edit your search.",MUTED,22.0);}}
 fn grid(c:&Canvas,u:&Ui){let page=u.selected/12*12;for i in page..(page+12).min(u.count){let id=u.results[i]as usize;let x=218.0+((i-page)%3)as f32*348.0;let y=125.0+((i-page)/3)as f32*150.0;c.card(x,y,333.0,134.0,i==u.selected);c.hit(x,y,333.0,134.0,Action::Select(i));
- if u.tab==1{c.icon(id,x+15.0,y+20.0,45.0);c.text(x+75.0,y+28.0,world::CLASSES[id],TEXT,20.0);let n=world::TREE.iter().filter(|r|r.kind as usize==id).count();let mut t=Text::new();let _=write!(t,"{} upgrade levels",n);c.text(x+18.0,y+90.0,t.str(),CYAN,17.0);}else{
+ if u.tab==1{c.icon(id,x+15.0,y+20.0,45.0);c.text(x+75.0,y+28.0,world::CLASSES[id],TEXT,20.0);let n=world::TREE.iter().filter(|r|r.kind as usize==id).count();let mut t=Text::new();let _=write!(t,"강화 {}단계",n);c.text(x+18.0,y+90.0,t.str(),CYAN,17.0);}else{
   let loc=&world::LOCATIONS[id];let pos=c.v(x+2.0,y+2.0);
   super::map_art::compendium_map_preview(id as u32,pos.x,pos.y,329.0*c.s,92.0*c.s);
   c.text(x+12.0,y+if super::map_pixels::ART[id].is_empty()&&super::map_pixels::MAPS[id].is_empty(){55.0}else{101.0},loc.name,TEXT,19.0);
@@ -82,10 +82,10 @@ fn tree(c:&Canvas,u:&Ui){
   if x<218.0||px>1255.0||y+31.0<168.0||py>732.0{continue;}c.line(px,py,px+8.0,py,EDGE);c.line(px+8.0,py,px+8.0,y+31.0,CYAN);c.line(px+8.0,y+31.0,x,y+31.0,CYAN);
  }
  for(i,id)in u.results[..u.count].iter().enumerate(){let n=&world::TREE[*id as usize];let x=225.0+n.depth as f32*212.0-pan_x;let y=180.0+n.row as f32*78.0-pan_y;if x+196.0<218.0||x>1255.0||y+64.0<168.0||y>732.0{continue;}
-  c.card(x,y,196.0,64.0,i==u.selected);let mut name=Text::new();let _=write!(name,"{} Lv{}",n.name,n.level);
-  c.clip(x+7.0,y+5.0,182.0,36.0);let label=name.str();let split=if label.len()>23{label[..label.char_indices().nth(23).map(|(i,_)|i).unwrap_or(label.len())].rfind(' ').unwrap_or(0)}else{0};
+  c.card(x,y,196.0,64.0,i==u.selected);let mut name=Text::new();let _=write!(name,"{} Lv{}",super::ko::tr(n.name),n.level);
+  c.clip(x+7.0,y+5.0,182.0,36.0);let label=name.str();let split=if super::game_ui::width(17.0,label)>182.0{label.char_indices().filter(|&(i,ch)|ch==' '&&super::game_ui::width(17.0,&label[..i])<=182.0).last().map(|(i,_)|i).unwrap_or(0)}else{0};
   if split>0{c.text(x+7.0,y+5.0,&label[..split],TEXT,17.0);c.text(x+7.0,y+23.0,&label[split+1..],TEXT,17.0);}else{c.text(x+7.0,y+5.0,label,TEXT,17.0);}c.endclip();
-  let mut atk=Text::new();let _=write!(atk,"{} atk  R{}",n.attack,["?","1","2","3","4","5","6","7","8","9","10","X"][n.rarity.min(11)as usize]);c.text(x+7.0,y+44.0,atk.str(),MUTED,13.0);
+  let mut atk=Text::new();let _=write!(atk,"공격 {}  R{}",n.attack,["?","1","2","3","4","5","6","7","8","9","10","X"][n.rarity.min(11)as usize]);c.text(x+7.0,y+44.0,atk.str(),MUTED,13.0);
   let colors=[0xff4444bb,0xff268ae2,0xff4cd9e7,0xff65b56b,0xffd69958,0xffeeece6,0xffcd77b2];
   for(row,sharp)in n.sharp.iter().enumerate(){let mut bx=x+109.0;for(k,width)in sharp.iter().enumerate(){let w=*width as f32;if w>0.0{c.rect(bx,y+44.0+row as f32*4.0,w,3.0,colors[k]);bx+=w;}}}
   let left=x.max(218.0);let top=y.max(168.0);c.hit(left,top,(x+196.0).min(1255.0)-left,(y+64.0).min(732.0)-top,Action::Select(i));
@@ -113,17 +113,17 @@ fn details(c:&Canvas,u:&Ui){if super::armor::active(u){armor_details(c,u);return
 fn weapon_node(c:&Canvas,id:usize,x:f32,y:f32,selected:bool,left_edge:f32){
  let n=&world::TREE[id];c.card(x,y,196.0,64.0,selected);
  let left=x.max(left_edge);let top=y.max(205.0);if left<(x+196.0).min(1244.0)&&top<(y+64.0).min(373.0){c.hit(left,top,(x+196.0).min(1244.0)-left,(y+64.0).min(373.0)-top,Action::WeaponNode(id));}
- let mut text=Text::new();let _=write!(text,"{} Lv{}",n.name,n.level);let label=text.str();
+ let mut text=Text::new();let _=write!(text,"{} Lv{}",super::ko::tr(n.name),n.level);let label=text.str();
  let split=if label.chars().count()>23{label[..label.char_indices().nth(23).map(|(i,_)|i).unwrap_or(label.len())].rfind(' ').unwrap_or(0)}else{0};
  c.clip(x+7.0,y+5.0,182.0,36.0);
  if split>0{c.text(x+7.0,y+5.0,&label[..split],TEXT,17.0);c.text(x+7.0,y+23.0,&label[split+1..],TEXT,17.0);}else{c.text(x+7.0,y+5.0,label,TEXT,17.0);}c.endclip();
- let mut attack=Text::new();let _=write!(attack,"{} atk  R{}",n.attack,["?","1","2","3","4","5","6","7","8","9","10","X"][n.rarity.min(11)as usize]);c.text(x+7.0,y+44.0,attack.str(),MUTED,13.0);
+ let mut attack=Text::new();let _=write!(attack,"공격 {}  R{}",n.attack,["?","1","2","3","4","5","6","7","8","9","10","X"][n.rarity.min(11)as usize]);c.text(x+7.0,y+44.0,attack.str(),MUTED,13.0);
  let colors=[0xff4444bb,0xff268ae2,0xff4cd9e7,0xff65b56b,0xffd69958,0xffeeece6,0xffcd77b2];
  for(row,bar)in n.sharp.iter().enumerate(){let mut bx=x+109.0;for(k,width)in bar.iter().enumerate(){let w=*width as f32;if w>0.0{c.rect(bx,y+44.0+row as f32*4.0,w,3.0,colors[k]);bx+=w;}}}
 }
 fn weapon_details(c:&Canvas,u:&Ui){
  let id=u.detail_node;let n=&world::TREE[id];let data=&super::weapon_data::WEAPONS[id];
- c.icon(n.kind as usize,224.0,120.0,34.0);let mut title=Text::new();let _=write!(title,"{}  Lv{}",n.name,n.level);c.text(272.0,122.0,title.str(),TEXT,27.0);
+ c.icon(n.kind as usize,224.0,120.0,34.0);let mut title=Text::new();let _=write!(title,"{}  Lv{}",super::ko::tr(n.name),n.level);c.text(272.0,122.0,title.str(),TEXT,27.0);
  c.text(1085.0,133.0,world::CLASSES[n.kind as usize],MUTED,16.0);
  let art=super::ui_pixels::ART.iter().find(|(entry,_)|*entry==u.detail).map(|(_,sprite)|*sprite);
  let tree_left=if art.is_some(){392.0}else{218.0};let origin=tree_left+7.0;
@@ -167,7 +167,7 @@ fn weapon_details(c:&Canvas,u:&Ui){
    if item.entry!=65535{c.hit(617.0,y-3.0,622.0,38.0,Action::Material(i));}
    if let Some(icon)=super::ui_pixels::ITEMS.get(item.entry as usize){c.sprite(*icon as usize,630.0,y,25.0);}
    c.clip(666.0,y,412.0,33.0);c.text(666.0,y+3.0,item.name,TEXT,18.0);c.endclip();
-   let mut qty=Text::new();let _=write!(qty,"{}{}",item.quantity,if item.points{" pts"}else{""});c.text(1160.0,y+3.0,qty.str(),CYAN,18.0);
+   let mut qty=Text::new();let _=write!(qty,"{}{}",item.quantity,if item.points{"점"}else{""});c.text(1160.0,y+3.0,qty.str(),CYAN,18.0);
    if item.key{c.text(1091.0,y+7.0,"Key",MUTED,13.0);}
    c.line(630.0,y+35.0,1226.0,y+35.0,EDGE);
   }
@@ -234,8 +234,8 @@ fn wishlist_view(c:&Canvas,u:&Ui){
    let owned=if item.points{None}else{super::inventory::owned(item.entry)};
    let all=super::wishlist::required_material(&item);
    if let Some(stock)=owned{let mut amount=Text::new();let _=write!(amount,"{}",stock.total());c.text(880.0,iy,amount.str(),if stock.total()>=all{0xff89c48a}else{0xff70adeb},16.0);}
-   let mut needed=Text::new();let _=write!(needed,"{}{}",item.quantity,if item.points{" pts"}else{""});c.text(1000.0,iy,needed.str(),TEXT,16.0);
-   let mut total=Text::new();let _=write!(total,"{}{}",all,if item.points{" pts"}else{""});c.text(1135.0,iy,total.str(),CYAN,16.0);
+   let mut needed=Text::new();let _=write!(needed,"{}{}",item.quantity,if item.points{"점"}else{""});c.text(1000.0,iy,needed.str(),TEXT,16.0);
+   let mut total=Text::new();let _=write!(total,"{}{}",all,if item.points{"점"}else{""});c.text(1135.0,iy,total.str(),CYAN,16.0);
   }
   y+=h+10.0;
  }
@@ -248,7 +248,7 @@ pub(super) fn quick_map(u:&mut Ui){
  let c=Canvas{d:imgui::DrawList::foreground(),f:super::game_ui::font(),s:scale,x:(size.x-960.0*scale)/2.0,y:(size.y-height*scale)/2.0,click:desktop::pointer(u),desktop:u.desktop,action:Cell::new(Action::None)};
  c.rect(0.0,0.0,960.0,height,0xf525241c);
  let name=u.current.and_then(|id|world::LOCATIONS.get(id)).map(|l|l.name).unwrap_or("Gathering");
- c.text(18.0,15.0,name,CYAN,23.0);c.text(720.0,20.0,["LR","HR","GR"][u.rank.min(2)as usize],TEXT,16.0);c.hint(795.0,20.0,if u.desktop{"Tab  Full utility"}else{"X  Full utility"},MUTED,14.0);c.hit(785.0,8.0,165.0,38.0,Action::QuickExpand);
+ c.text(18.0,15.0,name,CYAN,23.0);c.text(720.0,20.0,["하위","상위","G급"][u.rank.min(2)as usize],TEXT,16.0);c.hint(795.0,20.0,if u.desktop{"Tab  Full utility"}else{"X  Full utility"},MUTED,14.0);c.hit(785.0,8.0,165.0,38.0,Action::QuickExpand);
  if u.zone_count==0{c.text(20.0,85.0,"No gathering items for this quest map.",MUTED,18.0);}
  for area in start..(start+2).min(u.zone_count){let x=14.0+(area-start)as f32*472.0;
   c.card(x,59.0,460.0,body,area==u.zone);c.text(x+12.0,71.0,world::ZONES[u.zones[area]as usize],CYAN,18.0);c.hit(x,59.0,460.0,37.0,Action::Zone(area));
@@ -273,9 +273,9 @@ pub(super) fn gather_filters(u:&mut Ui){
  c.rect(0.0,0.0,700.0,590.0,BG);c.frame(0,0.0,0.0,700.0,590.0,u32::MAX);
  let p=c.v(8.0,6.0);super::game_ui::title(&c.d,[p.x,p.y,684.0*s,38.0*s]);
  c.text(56.0,16.0,"MHGU Utility",TEXT,20.0);c.hint(608.0,17.0,"A: close",TEXT,16.0);c.hit(594.0,6.0,96.0,35.0,Action::Back);
- let state=menu::state();let mut title=Text::new();if let Some((loc,rank))=super::context::location(){let _=write!(title,"{} - {}",world::LOCATIONS[loc].name,["LR","HR","GR"][rank as usize]);}c.text(25.0,57.0,title.str(),GOLD,20.0);
+ let state=menu::state();let mut title=Text::new();if let Some((loc,rank))=super::context::location(){let _=write!(title,"{} - {}",super::ko::tr(world::LOCATIONS[loc].name),["하위","상위","G급"][rank as usize]);}c.text(25.0,57.0,title.str(),GOLD,20.0);
  let checked=state.catalogue.entries().iter().filter(|e|state.selection.selected(e.category,e.item)).count();
- let mut count=Text::new();let _=write!(count,"{} / {} selected",checked,state.catalogue.entries().len());c.text(25.0,90.0,count.str(),MUTED,16.0);c.text(494.0,90.0,"Chance per gather",MUTED,16.0);
+ let mut count=Text::new();let _=write!(count,"{} / {} 선택",checked,state.catalogue.entries().len());c.text(25.0,90.0,count.str(),MUTED,16.0);c.text(494.0,90.0,"Chance per gather",MUTED,16.0);
  let checkbox=|x:f32,y:f32,check:CheckState|{c.rect(x,y,17.0,17.0,0xff080808);c.frame(1,x-2.0,y-2.0,21.0,21.0,0xffddd4c4);match check{CheckState::All=>{c.line(x+3.0,y+8.0,x+7.0,y+13.0,GOLD);c.line(x+7.0,y+13.0,x+15.0,y+3.0,GOLD);},CheckState::Some=>c.rect(x+3.0,y+7.0,11.0,3.0,GOLD),CheckState::None=>{}}};
  let all=if checked==0{CheckState::None}else if checked==state.catalogue.entries().len(){CheckState::All}else{CheckState::Some};
  checkbox(28.0,124.0,all);c.text(58.0,121.0,"All gathering",TEXT,19.0);c.hit(20.0,115.0,360.0,31.0,Action::Select(usize::MAX));
@@ -316,14 +316,14 @@ pub(super) fn wish_tracker(loc:usize,rank:u8){
   let height=44.0+uses as f32*16.0;
   if y+height>585.0{y=402.0;x-=274.0;}
   c.rect(x,y,266.0,height,0xe61a1712);
-  let mut line=Text::new();let _=write!(line,"{}  ×{}",item.name,remaining);
+  let mut line=Text::new();let _=write!(line,"{}  ×{}",super::ko::tr(item.name),remaining);
   c.text(x+9.0,y+6.0,line.str(),0xffffffff,15.0);
   let mut areas=Text::new();let _=write!(areas,"Zones: ");let mut first=true;
   for z in 0..world::ZONES.len().min(32){if zones&(1u32<<z)!=0{if !first{let _=write!(areas,", ");}first=false;let name=world::ZONES[z];let _=write!(areas,"{}",name.strip_prefix("Area ").unwrap_or(name));}}
   c.text(x+9.0,y+25.0,areas.str(),0xff9ee8ff,13.0);
   let mut wy=y+43.0;
   for w in super::wishlist::entries(){if super::wishlist::recipe(w.node,w.recipe).unwrap().items.iter().any(|m|!m.points&&m.entry==item.entry){
-   let title=super::wishlist::title(w.node);let mut name=Text::new();let _=write!(name,"For {}",title.str());
+   let title=super::wishlist::title(w.node);let mut name=Text::new();let _=write!(name,"{} 제작용",title.str());
    c.text(x+9.0,wy,name.str(),0xffe0d8cd,12.0);wy+=16.0;
   }}
   y+=height+5.0;
@@ -338,7 +338,7 @@ fn armor_list(c:&Canvas,u:&Ui){
 
  if u.armor_slot==-1&&u.len==0{for(i,name)in ["Armor sets","Head","Chest","Arms","Waist","Legs"].iter().enumerate(){let x=218.0+(i%3)as f32*348.0;let y=161.0+(i/3)as f32*170.0;c.card(x,y,333.0,150.0,i==u.selected);c.hit(x,y,333.0,150.0,Action::Select(i));c.sprite(super::ui_pixels::ARMOR_ICONS[i.saturating_sub(1).min(4)],x+18.0,y+18.0,38.0);c.text(x+18.0,y+82.0,name,TEXT,22.0);}return;}
  let page=u.selected/10*10;
- for i in page..(page+10).min(u.count){let id=u.results[i]as usize;let a=&super::armor_data::ARMOR[id];let y=161.0+(i-page)as f32*52.0;c.card(218.0,y,1034.0,46.0,i==u.selected);c.hit(218.0,y,1034.0,46.0,Action::Select(i));c.sprite(super::ui_pixels::ARMOR_ICONS[a.slot as usize],232.0,y+9.0,28.0);let label=super::armor::set_label(a);c.clip(273.0,y,602.0,44.0);c.text(275.0,y+12.0,if u.armor_slot==-2{label.str()}else{a.name},if i==u.selected{CYAN}else{TEXT},20.0);c.endclip();let mut rank=Text::new();let _=write!(rank,"{}  {}",if a.rarity<=3{"LR"}else if a.rarity<=7{"HR"}else{"GR"},["Blademaster","Gunner","Both"][a.hunter as usize]);c.text(885.0,y+15.0,rank.str(),MUTED,16.0);c.hint(1140.0,y+15.0,"B  Details",MUTED,14.0);}
+ for i in page..(page+10).min(u.count){let id=u.results[i]as usize;let a=&super::armor_data::ARMOR[id];let y=161.0+(i-page)as f32*52.0;c.card(218.0,y,1034.0,46.0,i==u.selected);c.hit(218.0,y,1034.0,46.0,Action::Select(i));c.sprite(super::ui_pixels::ARMOR_ICONS[a.slot as usize],232.0,y+9.0,28.0);let label=super::armor::set_label(a);c.clip(273.0,y,602.0,44.0);c.text(275.0,y+12.0,if u.armor_slot==-2{label.str()}else{a.name},if i==u.selected{CYAN}else{TEXT},20.0);c.endclip();let mut rank=Text::new();let _=write!(rank,"{}  {}",if a.rarity<=3{"하위"}else if a.rarity<=7{"상위"}else{"G급"},["검사","거너","공용"][a.hunter as usize]);c.text(885.0,y+15.0,rank.str(),MUTED,16.0);c.hint(1140.0,y+15.0,"B  Details",MUTED,14.0);}
  if u.count==0{c.text(225.0,185.0,"No armor matches your search",MUTED,20.0);}
 }
 fn armor_details(c:&Canvas,u:&Ui){
@@ -349,7 +349,7 @@ fn armor_details(c:&Canvas,u:&Ui){
  if !super::armor_preview::ready(){c.text(236.0,382.0,super::armor_preview::status(),MUTED,16.0);}
  c.rect(224.0,602.0,288.0,23.0,PANEL);c.hint(236.0,606.0,"Right stick rotates",MUTED,13.0);
  if u.armor_overview{armor_set_overview(c,u,id);}else{ c.card(534.0,178.0,268.0,452.0,false);c.text(550.0,194.0,"Stats & skill points",CYAN,18.0);
- let mut defense=Text::new();let _=write!(defense,"{} / {} max",a.defense,a.max_defense);
+ let mut defense=Text::new();let _=write!(defense,"{} / 최대 {}",a.defense,a.max_defense);
  let fields=[("Defense",defense.str()),("Type",["Blademaster","Gunner","Both"][a.hunter as usize]),("Gender",["Male","Female","Both"][a.gender as usize])];
  for(i,(label,value))in fields.iter().enumerate(){let y=228.0+i as f32*24.0;c.text(550.0,y,label,MUTED,14.0);c.text(660.0,y,value,TEXT,14.0);}
  c.text(550.0,301.0,"Slots",MUTED,14.0);for n in 0..3{c.sprite(if n<a.slots{super::ui_pixels::SLOT}else{super::ui_pixels::NO_SLOT},660.0+n as f32*25.0,298.0,23.0);}
@@ -358,7 +358,7 @@ fn armor_details(c:&Canvas,u:&Ui){
  c.card(818.0,178.0,434.0,452.0,false);c.text(834.0,194.0,"Crafting materials",CYAN,18.0);
  let items=super::armor::materials(id);let start=u.link/8*8;
  if items.len()==0{c.text(834.0,245.0,"No forge recipe in the source database",MUTED,15.0);}
- for(i,m)in items.iter().enumerate().skip(start).take(8){let y=237.0+(i-start)as f32*39.0;if i==u.link{c.rect(830.0,y-5.0,408.0,35.0,0xff303f5c);}if let Some(icon)=super::ui_pixels::ITEMS.get(m.entry as usize){c.sprite(*icon as usize,836.0,y-2.0,24.0);}c.clip(870.0,y,274.0,30.0);c.text(870.0,y,m.name,TEXT,16.0);c.endclip();let mut qty=Text::new();let _=write!(qty,"×{}{}",m.quantity,if m.points{" pts"}else{""});c.text(1153.0,y,qty.str(),CYAN,16.0);if m.entry!=65535{c.hit(831.0,y-5.0,407.0,35.0,Action::Entry(m.entry as usize));}}
+ for(i,m)in items.iter().enumerate().skip(start).take(8){let y=237.0+(i-start)as f32*39.0;if i==u.link{c.rect(830.0,y-5.0,408.0,35.0,0xff303f5c);}if let Some(icon)=super::ui_pixels::ITEMS.get(m.entry as usize){c.sprite(*icon as usize,836.0,y-2.0,24.0);}c.clip(870.0,y,274.0,30.0);c.text(870.0,y,m.name,TEXT,16.0);c.endclip();let mut qty=Text::new();let _=write!(qty,"×{}{}",m.quantity,if m.points{"점"}else{""});c.text(1153.0,y,qty.str(),CYAN,16.0);if m.entry!=65535{c.hit(831.0,y-5.0,407.0,35.0,Action::Entry(m.entry as usize));}}
  c.hint(837.0,550.0,"Y  Add full set to wishlist",CYAN,16.0);c.hit(830.0,540.0,408.0,36.0,Action::ArmorSetWish);
  c.hint(837.0,589.0,if super::wishlist::failed(){"Wishlist save failed"}else if super::wishlist::contains(node,0){"R3  Remove from wishlist"}else{"R3  Add to wishlist"},CYAN,16.0);c.hit(830.0,579.0,408.0,36.0,Action::ArmorWish);
  }
@@ -375,25 +375,25 @@ fn quest_plan(c:&Canvas){
  let selected=super::quest::selected_quest();
  for n in 0..s.len{let q=&super::quest_data::QUESTS[s.route[n]];let x=225.0+n as f32*342.0;c.card(x,210.0,330.0,117.0,n==s.selected);c.hit(x,210.0,330.0,117.0,Action::QuestSelect(n));
   c.clip(x+12.0,220.0,307.0,44.0);c.text(x+12.0,220.0,q.name,TEXT,19.0);c.endclip();
-  let mut label=Text::new();let _=write!(label,"{}  {}  {} stars",q.hub,["LR","HR","GR"][q.rank as usize],q.stars);c.text(x+12.0,264.0,label.str(),MUTED,17.0);c.text(x+12.0,294.0,world::LOCATIONS[q.loc as usize].name,CYAN,18.0);
+  let mut label=Text::new();let _=write!(label,"{}  {}  ★{}",super::ko::tr(q.hub),["하위","상위","G급"][q.rank as usize],q.stars);c.text(x+12.0,264.0,label.str(),MUTED,17.0);c.text(x+12.0,294.0,world::LOCATIONS[q.loc as usize].name,CYAN,18.0);
  }
- if let Some(id)=selected{let q=&super::quest_data::QUESTS[id];let mut roster=Text::new();for(i,m)in q.monsters.iter().enumerate(){let _=write!(roster,"{}{}",if i==0{""}else{", "},super::quest_data::MONSTERS[*m as usize]);}c.text(225.0,350.0,roster.str(),TEXT,20.0);}
+ if let Some(id)=selected{let q=&super::quest_data::QUESTS[id];let mut roster=Text::new();for(i,m)in q.monsters.iter().enumerate(){let _=write!(roster,"{}{}",if i==0{""}else{", "},super::ko::tr(super::quest_data::MONSTERS[*m as usize]));}c.text(225.0,350.0,roster.str(),TEXT,20.0);}
  let page_size=if selected.is_some(){5}else{8};let start=s.material/page_size*page_size;let top=if selected.is_some(){398.0}else{237.0};
  for(row,(need,n))in super::quest::display_needs().enumerate().skip(start).take(page_size){let y=top+(row-start)as f32*57.0;c.card(225.0,y,1008.0,50.0,row==s.material);if super::quest::need_available(need){c.hit(225.0,y,1008.0,50.0,Action::QuestMaterial(need));}if let Some(icon)=super::ui_pixels::ITEMS.get(n.item as usize){c.sprite(*icon as usize,237.0,y+10.0,26.0);}c.clip(278.0,y+4.0,720.0,26.0);c.text(278.0,y+5.0,super::quest::name(n.item),TEXT,20.0);c.endclip();
   if let Some(id)=selected.filter(|_|super::quest::need_available(need)){let label=super::quest::source_label(n.item,id);c.text(278.0,y+29.0,label.str(),MUTED,16.0);}else{c.text(278.0,y+29.0,if selected.is_some(){"Not available from this quest"}else{"No eligible quest selected; source navigation unavailable"},MUTED,14.0);}
-  let mut qty=Text::new();if !s.stock{let _=write!(qty,"Required {}{}",n.quantity,if n.item>=super::quest::POINT_BASE{" pt"}else{""});}else if n.item>=super::quest::POINT_BASE{let _=write!(qty,"{} pt unallocated",n.quantity);}else{let _=write!(qty,"Need {}",n.quantity);}c.text(1030.0,y+13.0,qty.str(),CYAN,16.0);
+  let mut qty=Text::new();if !s.stock{let _=write!(qty,"필요 {}{}",n.quantity,if n.item>=super::quest::POINT_BASE{"점"}else{""});}else if n.item>=super::quest::POINT_BASE{let _=write!(qty,"미배분 {}점",n.quantity);}else{let _=write!(qty,"필요 {}",n.quantity);}c.text(1030.0,y+13.0,qty.str(),CYAN,16.0);
  }
- let mut coverage=Text::new();let _=write!(coverage,"Route offers sources for {} of {} requirements.",super::quest::covered(),s.count);c.text(225.0,707.0,coverage.str(),MUTED,17.0);
- let mut page=Text::new();let _=write!(page,"Requirements {}-{} of {}",start+1,(start+page_size).min(s.count),s.count);c.text(225.0,730.0,page.str(),MUTED,16.0);
+ let mut coverage=Text::new();let _=write!(coverage,"요구 소재 {1}개 중 {0}개의 입수처를 찾았습니다.",super::quest::covered(),s.count);c.text(225.0,707.0,coverage.str(),MUTED,17.0);
+ let mut page=Text::new();let _=write!(page,"요구 소재 {}-{} / {}",start+1,(start+page_size).min(s.count),s.count);c.text(225.0,730.0,page.str(),MUTED,16.0);
 }
 
 fn quest_candidates(c:&Canvas){
  let s=super::quest::state();c.text(225.0,125.0,"Eligible point materials",CYAN,25.0);
  let Some(n)=s.needs.get(s.group).filter(|_|s.group<s.count)else{return;};
- c.text(225.0,166.0,super::quest::name(n.item),TEXT,22.0);let mut need=Text::new();let _=write!(need,"{} points unallocated",n.quantity);c.text(935.0,170.0,need.str(),CYAN,17.0);
+ c.text(225.0,166.0,super::quest::name(n.item),TEXT,22.0);let mut need=Text::new();let _=write!(need,"미배분 {}점",n.quantity);c.text(935.0,170.0,need.str(),CYAN,17.0);
  c.text(225.0,200.0,"Choose an alternative material to inspect its sources on this quest.",MUTED,16.0);
  let start=s.member/7*7;let Some(q)=super::quest::selected_quest()else{return;};
- for(i,(item,points))in super::quest::candidates().enumerate().skip(start).take(7){let y=237.0+(i-start)as f32*64.0;c.card(225.0,y,1008.0,57.0,i==s.member);c.hit(225.0,y,1008.0,57.0,Action::QuestMember(i));if let Some(icon)=super::ui_pixels::ITEMS.get(item as usize){c.sprite(*icon as usize,237.0,y+12.0,26.0);}c.clip(278.0,y+5.0,680.0,49.0);c.text(278.0,y+6.0,super::quest::name(item),TEXT,20.0);let label=super::quest::source_label(item,q);c.text(278.0,y+32.0,label.str(),MUTED,14.0);c.endclip();let mut value=Text::new();let _=write!(value,"+{} points per item",points);c.text(980.0,y+19.0,value.str(),CYAN,16.0);}
+ for(i,(item,points))in super::quest::candidates().enumerate().skip(start).take(7){let y=237.0+(i-start)as f32*64.0;c.card(225.0,y,1008.0,57.0,i==s.member);c.hit(225.0,y,1008.0,57.0,Action::QuestMember(i));if let Some(icon)=super::ui_pixels::ITEMS.get(item as usize){c.sprite(*icon as usize,237.0,y+12.0,26.0);}c.clip(278.0,y+5.0,680.0,49.0);c.text(278.0,y+6.0,super::quest::name(item),TEXT,20.0);let label=super::quest::source_label(item,q);c.text(278.0,y+32.0,label.str(),MUTED,14.0);c.endclip();let mut value=Text::new();let _=write!(value,"개당 +{}점",points);c.text(980.0,y+19.0,value.str(),CYAN,16.0);}
  c.text(225.0,707.0,"Alternatives are not additional requirements. Whole units supply points.",MUTED,16.0);
 }
 
@@ -401,7 +401,7 @@ fn skill_effect(id:usize,buffer:&mut[u8;4096])->&str{use super::set_data as data
 fn set_builder_view(c:&Canvas,u:&Ui){
  use super::{set_builder as builder,set_data as data,set_player as player};
  builder::refresh_summary();let state=builder::state();let profile=player::snapshot();let mut heading=Text::new();let mut effect=[0;4096];
- if profile.status==player::Status::Ready{let _=write!(heading,"{}   {}   HR {}   {} weapon slots   {} owned charms",if profile.gender==Some(0){"Male"}else{"Female"},if profile.hunter==Some(0){"Blademaster"}else{"Gunner"},profile.hr.unwrap_or(0),profile.weapon_slots.unwrap_or(0),profile.charm_count);}else{let _=write!(heading,"Character snapshot unavailable");}
+ if profile.status==player::Status::Ready{let _=write!(heading,"{}   {}   HR {}   무기 슬롯 {}   보유 호석 {}",if profile.gender==Some(0){"남성"}else{"여성"},if profile.hunter==Some(0){"검사"}else{"거너"},profile.hr.unwrap_or(0),profile.weapon_slots.unwrap_or(0),profile.charm_count);}else{let _=write!(heading,"Character snapshot unavailable");}
  c.text(225.0,112.0,heading.str(),GOLD,16.0);
  if let Some(id)=state.effect{set_effect(c,id);return;}
  if !state.show_results{
@@ -413,38 +413,38 @@ fn set_builder_view(c:&Canvas,u:&Ui){
   }
   if u.count==0{c.text(230.0,200.0,"No matching skills. Edit the search above.",MUTED,17.0);}
   for i in 0..state.goal_count{let id=state.goals[i];let a=&data::ACTIVATIONS[id];let y=190.0+i as f32*64.0;c.card(742.0,y,506.0,59.0,false);c.hit(742.0,y,506.0,59.0,Action::BuilderEffect(id));c.text(756.0,y+7.0,a.name,GOLD,18.0);c.clip(756.0,y+29.0,478.0,30.0);c.paragraph(756.0,y+29.0,474.0,skill_effect(id,&mut effect),MUTED,12.0,0,2);c.endclip();}
-  let mut count=Text::new();let _=write!(count,"{} / 6 selected",state.goal_count);c.text(752.0,584.0,count.str(),MUTED,17.0);
+  let mut count=Text::new();let _=write!(count,"{} / 6 선택",state.goal_count);c.text(752.0,584.0,count.str(),MUTED,17.0);
   c.card(742.0,612.0,506.0,45.0,false);c.hint(757.0,625.0,"Y  Search available armor",GOLD,19.0);c.hit(742.0,612.0,506.0,45.0,Action::BuilderStart);
   c.text(752.0,663.0,"All owned charms considered. Missing materials allowed.",MUTED,13.0);
   c.clip(220.0,679.0,1035.0,44.0);c.text(225.0,686.0,state.status,MUTED,16.0);c.endclip();return;
  }
- let mut progress=Text::new();let _=write!(progress,"{} builds found    {} search steps    {} / 5 variations    {:.1} / 60s",state.count,state.visited,state.search.variations,state.search.elapsed);c.text(225.0,151.0,progress.str(),CYAN,19.0);
+ let mut progress=Text::new();let _=write!(progress,"조합 {}개    탐색 {}단계    변형 {} / 5    {:.1} / 60초",state.count,state.visited,state.search.variations,state.search.elapsed);c.text(225.0,151.0,progress.str(),CYAN,19.0);
  c.clip(220.0,181.0,1035.0,34.0);c.text(225.0,187.0,state.status,MUTED,16.0);c.endclip();
- if state.phase==builder::Phase::Preparing{let mut line=Text::new();let (done,total)=super::set_unlock::progress();let _=write!(line,"Quests: {} / {}   Armor and jewels: {} / {}",done,total,state.progress,super::armor_data::ARMOR.len()+data::DECO.len());c.text(235.0,270.0,line.str(),TEXT,19.0);}
+ if state.phase==builder::Phase::Preparing{let mut line=Text::new();let (done,total)=super::set_unlock::progress();let _=write!(line,"퀘스트: {} / {}   방어구 · 장식주: {} / {}",done,total,state.progress,super::armor_data::ARMOR.len()+data::DECO.len());c.text(235.0,270.0,line.str(),TEXT,19.0);}
  if let Some(result)=state.results.get(state.result).filter(|_|state.result<state.count).and_then(|r|r.as_ref()){
   if state.skills{set_skills(c);return;}if state.jewels{set_jewels(c);return;}
-  let mut number=Text::new();let _=write!(number,"Build {} / {}",state.result+1,state.count);c.text(225.0,227.0,number.str(),GOLD,21.0);
+  let mut number=Text::new();let _=write!(number,"조합 {} / {}",state.result+1,state.count);c.text(225.0,227.0,number.str(),GOLD,21.0);
   c.hit(219.0,220.0,200.0,38.0,Action::BuilderResult(state.result.saturating_sub(1)));c.text(520.0,230.0,"<   Previous / Next   >",MUTED,16.0);c.hit(496.0,220.0,200.0,38.0,Action::BuilderResult((state.result+1).min(state.count-1)));
   let (capacity,used)=builder::slots();let mut defense=0u32;let mut missing=0;
   for slot in 0..5{let Some(id)=builder::armor_id(slot)else{continue;};let a=&super::armor_data::ARMOR[id];let owned=builder::owns(id);if !owned{missing+=1;}defense+=u32::from(a.defense);let y=275.0+slot as f32*54.0;
    c.card(218.0,y,558.0,47.0,slot==state.piece);c.hit(218.0,y,558.0,47.0,Action::Armor(id));c.sprite(super::ui_pixels::ARMOR_ICONS[slot],230.0,y+8.0,29.0);c.clip(272.0,y,317.0,44.0);c.text(274.0,y+8.0,a.name,TEXT,18.0);c.endclip();set_slots(c,600.0,y+11.0,capacity[slot],used[slot]);c.text(680.0,y+10.0,if owned{"Owned"}else{"Missing"},if owned{0xffa9d890}else{GOLD},15.0);
   }
-  let mut def=Text::new();let _=write!(def,"Base defense {}   Slots: {} used / {} total",defense,used.iter().map(|&n|u32::from(n)).sum::<u32>(),capacity.iter().map(|&n|u32::from(n)).sum::<u32>());c.text(230.0,560.0,def.str(),MUTED,16.0);
+  let mut def=Text::new();let _=write!(def,"기본 방어력 {}   슬롯: {} 사용 / 총 {}",defense,used.iter().map(|&n|u32::from(n)).sum::<u32>(),capacity.iter().map(|&n|u32::from(n)).sum::<u32>());c.text(230.0,560.0,def.str(),MUTED,16.0);
   c.text(804.0,232.0,"Owned talisman",CYAN,19.0);
-  if result.charm==0{c.text(804.0,265.0,"No talisman required",TEXT,17.0);}else{let charm=&profile.charms[result.charm as usize-1];let mut label=Text::new();let _=write!(label,"Equipment box #{}",charm.box_index+1);c.text(804.0,264.0,label.str(),TEXT,17.0);for(i,skill)in charm.skills.iter().filter(|s|s.tree!=0).enumerate(){let mut line=Text::new();let _=write!(line,"{} {:+}",data::TREE_NAMES[skill.tree as usize],skill.points);c.text(804.0,294.0+i as f32*24.0,line.str(),TEXT,17.0);}set_slots(c,804.0,347.0,charm.slots,used[5]);}
+  if result.charm==0{c.text(804.0,265.0,"No talisman required",TEXT,17.0);}else{let charm=&profile.charms[result.charm as usize-1];let mut label=Text::new();let _=write!(label,"장비 상자 #{}",charm.box_index+1);c.text(804.0,264.0,label.str(),TEXT,17.0);for(i,skill)in charm.skills.iter().filter(|s|s.tree!=0).enumerate(){let mut line=Text::new();let _=write!(line,"{} {:+}",super::ko::tr(data::TREE_NAMES[skill.tree as usize]),skill.points);c.text(804.0,294.0+i as f32*24.0,line.str(),TEXT,17.0);}set_slots(c,804.0,347.0,charm.slots,used[5]);}
   c.text(804.0,393.0,"Skills from this build",CYAN,19.0);
   let mut shown=0;for &tree in &state.skill_rows[..state.skill_count]{
    let p=state.totals.points[tree as usize];let active=builder::activation(tree,p);
    let threshold=active.map(|i|data::ACTIVATIONS[i].points).or_else(||builder::target(tree)).or_else(||data::ACTIVATIONS.iter().filter(|a|a.tree==tree&&(a.points>0)==(p>0)).min_by_key(|a|a.points.abs()).map(|a|a.points));
    let name=if active.is_some(){builder::skill_name(tree)}else{data::TREE_NAMES[tree as usize]};let mut line=Text::new();
-   if let Some(target)=threshold{if active.is_some(){let _=write!(line,"{}  {} / {}",name,p,target);}else{let _=write!(line,"{}  {:+} / {}",name,p,target);}}else{let _=write!(line,"{}  {:+}",name,p);}
+   if let Some(target)=threshold{if active.is_some(){let _=write!(line,"{}  {} / {}",super::ko::tr(name),p,target);}else{let _=write!(line,"{}  {:+} / {}",super::ko::tr(name),p,target);}}else{let _=write!(line,"{}  {:+}",super::ko::tr(name),p);}
    let y=426.0+shown as f32*51.0;c.clip(799.0,y,451.0,49.0);c.text(804.0,y,line.str(),if p<0{0xff8888ee}else if active.is_some(){TEXT}else{MUTED},17.0);
    if let Some(id)=active{c.paragraph(804.0,y+22.0,440.0,skill_effect(id,&mut effect),MUTED,12.0,0,2);c.hit(799.0,y,451.0,49.0,Action::BuilderEffect(id));}c.endclip();shown+=1;if shown==3{break;}
   }
   if state.skill_count>shown{c.text(804.0,581.0,"More points in All skills",MUTED,14.0);}
   c.card(218.0,598.0,271.0,58.0,state.piece==5);c.hit(218.0,598.0,271.0,58.0,Action::BuilderJewels);
-  let mut jewels=Text::new();let _=write!(jewels,"{}Decorations: {}",if state.piece==5{"B  "}else{""},result.jewel_count);c.hint(230.0,616.0,jewels.str(),CYAN,17.0);
-  c.card(502.0,598.0,274.0,58.0,state.piece==6);c.hit(502.0,598.0,274.0,58.0,Action::BuilderSkills);let mut label=Text::new();let _=write!(label,"{}All skills ({})",if state.piece==6{"B  "}else{"L3  "},state.skill_count);c.hint(514.0,616.0,label.str(),CYAN,17.0);
+  let mut jewels=Text::new();let _=write!(jewels,"{}장식주: {}",if state.piece==5{"B  "}else{""},result.jewel_count);c.hint(230.0,616.0,jewels.str(),CYAN,17.0);
+  c.card(502.0,598.0,274.0,58.0,state.piece==6);c.hit(502.0,598.0,274.0,58.0,Action::BuilderSkills);let mut label=Text::new();let _=write!(label,"{}전체 스킬 ({})",if state.piece==6{"B  "}else{"L3  "},state.skill_count);c.hint(514.0,616.0,label.str(),CYAN,17.0);
 
   c.text(225.0,687.0,if builder::unverified(){"Availability unverified for some equipment."}else{"Progression availability verified."},GOLD,16.0);
   if missing>0{c.card(802.0,598.0,446.0,42.0,false);c.hint(816.0,610.0,if super::wishlist::failed(){"Wishlist save failed"}else{"R3  Add missing armor to wishlist"},GOLD,17.0);c.hit(802.0,598.0,446.0,42.0,Action::BuilderWish);}
@@ -455,7 +455,7 @@ fn set_builder_view(c:&Canvas,u:&Ui){
 fn set_jewels(c:&Canvas){
  use super::{set_builder as builder,set_data as data};let state=builder::state();let Some(result)=state.results[state.result].as_ref()else{return;};
  c.text(225.0,230.0,"Decoration placement",CYAN,22.0);
- let (capacity,used)=builder::slots();let mut slots=Text::new();for i in 0..7{let _=write!(slots,"{} {}{}/{}",if i==0{""}else{"  "},if i<5{super::armor::SLOTS[i]}else if i==5{"Charm"}else{"Weapon"},used[i],capacity[i]);}c.text(225.0,255.0,slots.str(),MUTED,14.0);
+ let (capacity,used)=builder::slots();let mut slots=Text::new();for i in 0..7{let _=write!(slots,"{} {}{}/{}",if i==0{""}else{"  "},if i<5{super::ko::tr(super::armor::SLOTS[i])}else if i==5{"호석"}else{"무기"},used[i],capacity[i]);}c.text(225.0,255.0,slots.str(),MUTED,14.0);
  if result.jewel_count==0{c.text(235.0,285.0,"No decorations required.",TEXT,19.0);}
  for(i,p)in result.jewels[..result.jewel_count as usize].iter().enumerate(){let a=&data::DECO[builder::jewel_id(p.jewel as usize)];let x=218.0+(i/11)as f32*524.0;let y=283.0+(i%11)as f32*39.0;
  c.card(x,y,509.0,35.0,i==state.jewel_row);c.hit(x,y,509.0,35.0,Action::BuilderJewel(i));if let Some(icon)=super::ui_pixels::ITEMS.get(a.entry as usize){c.sprite(*icon as usize,x+7.0,y+5.0,24.0);}
@@ -465,19 +465,19 @@ fn set_jewels(c:&Canvas){
 
 fn set_slots(c:&Canvas,x:f32,y:f32,total:u8,used:u8){for i in 0..total{let left=x+i as f32*19.0;c.sprite(super::ui_pixels::SLOT,left,y,17.0);if i<used{c.rect(left+6.0,y+6.0,5.0,5.0,GOLD);}}}
 fn set_effect(c:&Canvas,id:usize){use super::{set_builder as builder,set_data as data};let a=&data::ACTIVATIONS[id];let state=builder::state();let mut effect=[0;4096];
- c.text(225.0,166.0,"Full effect",CYAN,20.0);c.text(225.0,211.0,a.name,GOLD,25.0);let mut threshold=Text::new();let _=write!(threshold,"{}   {:+} skill points",data::TREE_NAMES[a.tree as usize],a.points);c.text(225.0,250.0,threshold.str(),MUTED,16.0);
+ c.text(225.0,166.0,"Full effect",CYAN,20.0);c.text(225.0,211.0,a.name,GOLD,25.0);let mut threshold=Text::new();let _=write!(threshold,"{}   스킬 포인트 {:+}",super::ko::tr(data::TREE_NAMES[a.tree as usize]),a.points);c.text(225.0,250.0,threshold.str(),MUTED,16.0);
  let lines=c.paragraph(230.0,295.0,1000.0,skill_effect(id,&mut effect),TEXT,19.0,state.effect_line,builder::EFFECT_PAGE);builder::effect_lines(lines);
- let mut progress=Text::new();let _=write!(progress,"Lines {}-{} / {}",state.effect_line+1,(state.effect_line+builder::EFFECT_PAGE).min(lines),lines);c.text(230.0,705.0,progress.str(),MUTED,14.0);
+ let mut progress=Text::new();let _=write!(progress,"{}-{}줄 / {}",state.effect_line+1,(state.effect_line+builder::EFFECT_PAGE).min(lines),lines);c.text(230.0,705.0,progress.str(),MUTED,14.0);
 }
 fn set_skills(c:&Canvas){use super::{set_builder as builder,set_data as data};let state=builder::state();let mut effect=[0;4096];c.text(225.0,230.0,"All skills",CYAN,22.0);c.text(230.0,270.0,"Skill tree",MUTED,16.0);c.text(580.0,270.0,"Activated skill / effect",MUTED,16.0);c.text(1130.0,270.0,"Points",MUTED,16.0);
  let start=state.skill_row/builder::POINTS_PAGE*builder::POINTS_PAGE;for(i,&tree)in state.skill_rows[..state.skill_count].iter().enumerate().skip(start).take(builder::POINTS_PAGE){let y=302.0+(i-start)as f32*75.0;let p=state.totals.points[tree as usize];c.card(218.0,y,1034.0,69.0,i==state.skill_row);c.text(230.0,y+7.0,data::TREE_NAMES[tree as usize],TEXT,17.0);c.clip(578.0,y,540.0,68.0);c.text(580.0,y+7.0,builder::skill_name(tree),if p<0{0xff8888ee}else{GOLD},17.0);
  if let Some(id)=builder::activation(tree,p){c.paragraph(580.0,y+30.0,525.0,skill_effect(id,&mut effect),MUTED,13.0,0,2);c.hit(218.0,y,1034.0,69.0,Action::BuilderEffect(id));}c.endclip();let mut points=Text::new();let _=write!(points,"{:+}",p);c.text(1145.0,y+7.0,points.str(),if p<0{0xff8888ee}else{TEXT},17.0);}
- let mut page=Text::new();let _=write!(page,"{} active skills   {} skill trees   Page {} / {}",state.active_count,state.skill_count,start/builder::POINTS_PAGE+1,state.skill_count.div_ceil(builder::POINTS_PAGE).max(1));c.text(225.0,727.0,page.str(),MUTED,15.0);
+ let mut page=Text::new();let _=write!(page,"발동 스킬 {}   스킬 계통 {}   페이지 {} / {}",state.active_count,state.skill_count,start/builder::POINTS_PAGE+1,state.skill_count.div_ceil(builder::POINTS_PAGE).max(1));c.text(225.0,727.0,page.str(),MUTED,15.0);
 }
 
 fn armor_set_overview(c:&Canvas,u:&Ui,id:usize){use super::{armor,set_builder,set_data};let a=&super::armor_data::ARMOR[id];let set=armor::summary(id);
- c.card(534.0,178.0,268.0,452.0,false);c.text(550.0,194.0,"Full set stats",CYAN,18.0);let mut defense=Text::new();let _=write!(defense,"{} / {} max",set.defense,set.max_defense);c.text(550.0,228.0,"Defense",MUTED,14.0);c.text(650.0,228.0,defense.str(),TEXT,14.0);c.text(550.0,252.0,["Blademaster","Gunner","Both"][a.hunter as usize],TEXT,16.0);
- let mut slots=Text::new();let _=write!(slots,"{} pieces    {} slots total",set.pieces,set.slots);c.text(550.0,285.0,slots.str(),TEXT,15.0);
+ c.card(534.0,178.0,268.0,452.0,false);c.text(550.0,194.0,"Full set stats",CYAN,18.0);let mut defense=Text::new();let _=write!(defense,"{} / 최대 {}",set.defense,set.max_defense);c.text(550.0,228.0,"Defense",MUTED,14.0);c.text(650.0,228.0,defense.str(),TEXT,14.0);c.text(550.0,252.0,["Blademaster","Gunner","Both"][a.hunter as usize],TEXT,16.0);
+ let mut slots=Text::new();let _=write!(slots,"{}부위    슬롯 총 {}",set.pieces,set.slots);c.text(550.0,285.0,slots.str(),TEXT,15.0);
  for(i,label)in ["Fire","Water","Thunder","Ice","Dragon"].iter().enumerate(){let y=332.0+i as f32*23.0;let mut value=Text::new();let _=write!(value,"{:+}",set.resist[i]);c.text(550.0,y,label,MUTED,14.0);c.text(730.0,y,value.str(),TEXT,14.0);}
  c.card(818.0,178.0,434.0,452.0,false);c.text(834.0,194.0,"Full set skills",CYAN,18.0);let start=u.link/6*6;
  for(i,&tree)in set.skill_rows[..set.skill_count].iter().enumerate().skip(start).take(6){let y=235.0+(i-start)as f32*47.0;let points=set.skills.points[tree as usize];c.text(834.0,y,set_data::TREE_NAMES[tree as usize],TEXT,16.0);let mut amount=Text::new();let _=write!(amount,"{:+}",points);c.text(1170.0,y,amount.str(),if points<0{0xff8888ee}else{CYAN},16.0);let label=set_builder::activation(tree,points).map(|id|set_data::ACTIVATIONS[id].name).unwrap_or(if tree==set_data::TORSO_UP&&points>0{"Torso Up"}else{"Not active"});c.text(834.0,y+21.0,label,if points<0{0xff8888ee}else{MUTED},14.0);}

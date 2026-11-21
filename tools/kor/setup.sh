@@ -34,4 +34,7 @@ if [ ! -f build/data/catalog.json ]; then
 fi
 echo "== generated data"
 python3 tools/prepare.py --catalog build/data/catalog.json --database inputs/mhgu.db --game-dir "$GU" --art-dir inputs/art
+echo "== Korean: game-name keys and the UI dictionary"
+python3 tools/kor/keys.py "$GU"
+python3 tools/kor/dict.py
 echo "done: now bash mod/build-local.sh"

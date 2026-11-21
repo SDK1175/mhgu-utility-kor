@@ -1,0 +1,307 @@
+# English<TAB>Korean. Our own translations of the utility's text and of the data labels that are not game text.
+# tools/kor/dict.py turns this into mod/src/ko_dict.rs (sorted) and adds the syllables to the font subset.
+# Keep the button tokens as they are ("B  ", "A:", "R3  ", "X  " ...): the PC hints replace them with keys.
+Navigation	메뉴
+Items	아이템
+Weapons	무기
+Locations	채집 장소
+Wishlist	위시리스트
+Armor	방어구
+Set Builder	스킬 조합
+Switch section	탭 전환
+Select	선택
+Search	검색
+Item sources	아이템 입수처
+Weapon details	무기 상세
+Item list	아이템 목록
+Weapon trees	무기 파생
+Type to search...	입력해서 검색...
+All	전체
+LR	하위
+HR	상위
+GR	G급
+Back	뒤로
+Prev       Next	이전       다음
+Type: search     Up / Down: results     Left / Right: caret     Ctrl+A: all	입력: 검색     위 / 아래: 결과     좌 / 우: 커서     Ctrl+A: 전체
+Up / Down: scroll     Left / Right: page     A: back	위 / 아래: 스크롤     좌 / 우: 페이지     A: 뒤로
+Up / Down: skill     Left / Right: page     B: full effect     A: build	위 / 아래: 스킬     좌 / 우: 페이지     B: 전체 효과     A: 조합
+Left / Right: build   Up / Down: piece   B: details   R3: wishlist   Y: pause	좌 / 우: 조합   위 / 아래: 부위   B: 상세   R3: 위시리스트   Y: 일시정지
+Up / Down: skill   B: select   L3: full effect   Y: search   A: back	위 / 아래: 스킬   B: 선택   L3: 전체 효과   Y: 검색   A: 뒤로
+Left / Right: overview / piece     Up / Down: skill     R3: add set	좌 / 우: 개요 / 부위     위 / 아래: 스킬     R3: 세트 추가
+Left / Right: set piece     Up / Down: material     B: sources     R3: piece     Y: add set	좌 / 우: 세트 부위     위 / 아래: 소재     B: 입수처     R3: 부위     Y: 세트 추가
+D-pad: armor     Y: hunter type     L3: gender     LT / RT: rank     B: details	방향키: 방어구     Y: 헌터 타입     L3: 성별     LT / RT: 랭크     B: 상세
+Left / Right: source     Up / Down: rows     B: ingredient sources     A: back	좌 / 우: 입수처     위 / 아래: 항목     B: 소재 입수처     A: 뒤로
+D-pad: navigate tree     B: materials     A: weapon tree	방향키: 파생 이동     B: 소재     A: 무기 파생
+Left / Right: recipe     Up: tree     Down: materials	좌 / 우: 레시피     위: 파생     아래: 소재
+Up / Down: material     B: item sources     A: miniature tree	위 / 아래: 소재     B: 아이템 입수처     A: 미니 파생도
+Up / Down: link     B: open     A: back	위 / 아래: 링크     B: 열기     A: 뒤로
+Left / Right: zone     LT / RT: LR / HR / GR     B: item details	좌 / 우: 구역     LT / RT: 하위 / 상위 / G급     B: 아이템 상세
+D-pad: location     LT / RT: LR / HR / GR     B: browse zones	방향키: 장소     LT / RT: 하위 / 상위 / G급     B: 구역 보기
+Up / Down: column     Left / Right: upgrades     LT / RT: family     B: details	위 / 아래: 열     좌 / 우: 강화     LT / RT: 계열     B: 상세
+Up / Down: eligible material     B: sources     A: quest route	위 / 아래: 대상 소재     B: 입수처     A: 퀘스트 경로
+Up / Down: requirements     Y: refresh     A: wishlist	위 / 아래: 요구 소재     Y: 새로고침     A: 위시리스트
+Left / Right: quest     Up / Down: material     B: sources     Y: refresh     A: wishlist	좌 / 우: 퀘스트     위 / 아래: 소재     B: 입수처     Y: 새로고침     A: 위시리스트
+D-pad / left stick: navigate     Right stick: scroll details	방향키 / 왼쪽 스틱: 이동     오른쪽 스틱: 상세 스크롤
+F6 / Start + Left	F6 / Start + 왼쪽
+Enter: type     F9: delete     Esc: back	Enter: 입력     F9: 지우기     Esc: 뒤로
+B: type     Y: delete     X: done     A: back	B: 입력     Y: 지우기     X: 완료     A: 뒤로
+Matches	검색 결과
+Type a name to see matching results.	이름을 입력하면 결과가 나옵니다.
+No matches. Try a shorter name.	결과가 없습니다. 더 짧게 입력해 보세요.
+No matches. X to edit your search.	결과가 없습니다. X  검색어 수정
+Left / Right: upgrades     Up / Down: same column	좌 / 우: 강화     위 / 아래: 같은 열
+Current quest location	현재 퀘스트 장소
+No gathering records for this location and rank.	이 장소와 랭크의 채집 기록이 없습니다.
+Related weapons / materials	관련 무기 / 소재
+Upgrade tree  <	강화 파생  <
+Upgrade tree	강화 파생
+B  Materials	B  소재
+B  Details	B  상세
+Weapon stats	무기 성능
+Attack	공격력
+Rarity	레어도
+Slots	슬롯
+Sharpness	예리도
+Base	기본
+Crafting materials	제작 소재
+Key	키
+B  Item sources	B  아이템 입수처
+R3  Remove from wishlist	R3  위시리스트에서 빼기
+R3  Add to wishlist	R3  위시리스트에 추가
+No crafting recipe recorded for this level.	이 단계의 제작 레시피가 없습니다.
+ITEM SOURCES	아이템 입수처
+Acquisition details not imported yet.	입수 정보가 아직 없습니다.
+Area / gathering spot	구역 / 채집 포인트
+Source	입수처
+Rank	랭크
+Qty	수량
+Chance	확률
+Search finds items across every category	검색은 모든 분류의 아이템을 찾습니다
+Y  Suggest quests	Y  퀘스트 추천
+Your wishlist is empty	위시리스트가 비어 있습니다
+No wishlist recipes match your search	검색에 맞는 위시리스트 레시피가 없습니다
+Press R3 on a weapon or armor piece to save its crafting recipe.	R3  무기나 방어구 부위에서 누르면 제작 레시피를 저장합니다.
+Clear your search to see the remaining recipes.	검색어를 지우면 나머지 레시피가 보입니다.
+R3  Remove	R3  빼기
+Remove	빼기
+Material	소재
+Owned	보유
+Needed	필요
+Total	합계
+Tab  Full utility	Tab  전체 화면
+X  Full utility	X  전체 화면
+No gathering items for this quest map.	이 퀘스트 맵에는 채집 아이템이 없습니다.
+Left / Right: areas     Up / Down: items     B: item sources     A: close	좌 / 우: 구역     위 / 아래: 아이템     B: 아이템 입수처     A: 닫기
+A: close	A: 닫기
+Chance per gather	채집 1회당 확률
+All gathering	모든 채집
+ to 	 ~
+Waiting for this map's gathering points...	이 맵의 채집 포인트를 기다리는 중...
+D-pad: move     B: checkbox     A: close	방향키: 이동     B: 체크     A: 닫기
+Zones: 	구역:
+Armor sets	방어구 세트
+Blademaster	검사
+Gunner	거너
+Both	공용
+No armor matches your search	검색에 맞는 방어구가 없습니다
+Full set preview	세트 미리보기
+Right stick rotates	오른쪽 스틱: 회전
+Stats & skill points	성능 · 스킬 포인트
+Defense	방어력
+Type	타입
+Gender	성별
+Male	남성
+Female	여성
+Fire	불
+Water	물
+Thunder	번개
+Ice	얼음
+Dragon	용
+No forge recipe in the source database	데이터베이스에 생산 레시피가 없습니다
+Y  Add full set to wishlist	Y  세트를 위시리스트에 추가
+Full set	세트
+Stats & skills	성능 · 스킬
+Unlocked quest route	해금된 퀘스트 경로
+Your wishlist is empty. Add a recipe to plan a route.	위시리스트가 비어 있습니다. 레시피를 추가하면 경로를 짭니다.
+Quest availability cannot be verified in this scene.	이 장면에서는 퀘스트 해금을 확인할 수 없습니다.
+Inventory is unavailable. Reopen after your character has loaded.	인벤토리를 읽을 수 없습니다. 캐릭터를 불러온 뒤 다시 여세요.
+Some requirements could not be resolved. This plan is incomplete.	일부 요구 소재를 찾지 못해 계획이 완전하지 않습니다.
+Known stock supplies all requirements with the suggested allocation.	추천 배분이면 보유한 소재로 모두 충당됩니다.
+Checking your character's unlocked quests...	캐릭터의 해금 퀘스트를 확인하는 중...
+No unlocked quest has an imported source for these materials.	해금된 퀘스트 중 이 소재의 입수처가 없습니다.
+Source opportunities only. Quantities and rare drops are not guaranteed.	입수 가능성만 표시합니다. 수량과 희귀 소재는 보장되지 않습니다.
+Suggested stock allocation; alternatives may use your materials differently.	추천 배분입니다. 다른 소재로 바꾸면 달라질 수 있습니다.
+Not available from this quest	이 퀘스트에서는 얻을 수 없습니다
+No eligible quest selected; source navigation unavailable	선택된 퀘스트가 없어 입수처로 이동할 수 없습니다
+Eligible point materials	대상 포인트 소재
+Choose an alternative material to inspect its sources on this quest.	다른 소재를 고르면 이 퀘스트의 입수처를 볼 수 있습니다.
+Alternatives are not additional requirements. Whole units supply points.	대체 소재는 추가 요구가 아닙니다. 개수 단위로 포인트를 채웁니다.
+Effect data unavailable	효과 데이터가 없습니다
+Character snapshot unavailable	캐릭터 정보를 읽을 수 없습니다
+Choose activated skills	발동할 스킬 선택
+Minimum skills	최소 스킬
+No matching skills. Edit the search above.	맞는 스킬이 없습니다. 위의 검색어를 고치세요.
+Y  Search available armor	Y  사용 가능한 방어구 검색
+All owned charms considered. Missing materials allowed.	보유한 호석을 모두 고려합니다. 소재가 모자라도 포함합니다.
+<   Previous / Next   >	<   이전 / 다음   >
+Missing	부족
+Owned talisman	보유 호석
+No talisman required	호석 필요 없음
+Skills from this build	이 조합의 스킬
+More points in All skills	포인트 더 보기: 전체 스킬
+Availability unverified for some equipment.	일부 장비는 입수 여부를 확인하지 못했습니다.
+Progression availability verified.	진행도 기준 입수 가능 확인됨.
+R3  Add missing armor to wishlist	R3  부족한 방어구를 위시리스트에 추가
+Y  Pause search	Y  검색 일시정지
+Y  Search / resume	Y  검색 / 재개
+Decoration placement	장식주 배치
+Charm	호석
+Weapon	무기
+No decorations required.	장식주가 필요 없습니다.
+B  Item sources       A  Build results	B  아이템 입수처       A  조합 결과
+Full effect	전체 효과
+All skills	전체 스킬
+Skill tree	스킬 계통
+Activated skill / effect	발동 스킬 / 효과
+Points	포인트
+Full set stats	세트 성능
+Full set skills	세트 스킬
+Unadorned set; no talisman or gems	장식주 · 호석 없는 세트
+R3  Add full set to wishlist	R3  세트를 위시리스트에 추가
+Select skills, then search your available equipment.	스킬을 고른 뒤 사용 가능한 장비를 검색하세요.
+Character equipment is unavailable. Open this in town as a hunter.	장비를 읽을 수 없습니다. 마을에서 헌터로 여세요.
+This game build cannot verify equipment availability.	이 게임 버전에서는 장비 입수 여부를 확인할 수 없습니다.
+Checks every owned charm. Crafting materials do not limit results.	보유한 호석을 모두 확인합니다. 제작 소재는 결과를 제한하지 않습니다.
+Select at least one skill.	스킬을 하나 이상 고르세요.
+Checking progression availability (not crafting stock)...	진행도 기준 입수 여부를 확인하는 중 (소재 재고 아님)...
+Search paused. Y resumes.	검색 일시정지. Y로 재개합니다.
+Improving the best builds found so far...	지금까지 찾은 조합을 다듬는 중...
+Search paused while browsing. Y resumes.	보는 동안 검색 일시정지. Y로 재개합니다.
+Character or scene changed. Return to skill selection and search again.	캐릭터나 장면이 바뀌었습니다. 스킬 선택으로 돌아가 다시 검색하세요.
+Armor candidate capacity exceeded; search was not truncated.	방어구 후보가 너무 많습니다. 검색은 끝까지 했습니다.
+Decoration capacity exceeded.	장식주 수가 한도를 넘었습니다.
+No available armor for at least one equipment slot.	사용 가능한 방어구가 없는 부위가 있습니다.
+Searching all available armor and owned charms...	사용 가능한 방어구와 호석을 모두 검색하는 중...
+Searching other armor and charm combinations...	다른 방어구 · 호석 조합을 검색하는 중...
+Refining decorations for this build...	이 조합의 장식주를 다듬는 중...
+Search complete: no matching build.	검색 완료: 맞는 조합이 없습니다.
+Search complete. Ranked by activated skills.	검색 완료. 발동 스킬 순입니다.
+Search paused.	검색 일시정지.
+The equipment snapshot or search data is invalid.	장비 정보나 검색 데이터가 잘못되었습니다.
+Found 5 different active-skill combinations. Y continues.	발동 스킬이 다른 조합 5개를 찾았습니다. Y로 계속합니다.
+60-second search finished. Best variations so far; Y continues.	60초 검색 끝. 지금까지의 최선입니다. Y로 계속합니다.
+Torso Up	몸통 연장
+Not active	미발동
+Head	머리
+Chest	몸통
+Arms	팔
+Waist	허리
+Legs	다리
+Type: All	타입: 전체
+Type: Blademaster	타입: 검사
+Type: Gunner	타입: 거너
+Gender: All	성별: 전체
+Gender: Male	성별: 남성
+Gender: Female	성별: 여성
+Native preview unavailable	미리보기를 쓸 수 없습니다
+No model mapping for this set	이 세트의 모델 정보가 없습니다
+Preview view is busy	미리보기가 사용 중입니다
+Loading model...	모델을 불러오는 중...
+Mining	채광
+Bugs	벌레잡이
+Mushrooms	버섯
+Plants	식물
+Honey	꿀
+Bones	뼈
+Berries	열매
+Other	기타
+Unknown item	알 수 없는 아이템
+Upgrade	강화
+Create	생산
+Forge	생산
+Mine	채광
+Bug	벌레잡이
+Gather	채집
+Fishing	낚시
+Gathering	채집
+Remove from wishlist	위시리스트에서 빼기
+Wishlist save failed	위시리스트 저장 실패
+Add to wishlist	위시리스트에 추가
+Unresolved requirement	찾지 못한 요구 소재
+Eligible material options; each unit supplies points	대상 소재 (개수마다 포인트를 채웁니다)
+Target monster drops	목표 몬스터 소재
+Incidental monster drops	다른 몬스터 소재
+Quest rewards	퀘스트 보수
+Space	띄어쓰기
+Clear	지우기
+Done	완료
+Delete	지우기
+Affinity	회심률
+Element	속성
+Phial	병
+Shelling	포격
+Notes	음색
+Recoil	반동
+Reload	장전
+Deviation	편차
+Charges	모으기
+Coatings	병
+Stats	성능
+Price	가격
+Buy	구매
+Sell	판매
+Trader	교역
+Item shop	잡화점
+Combining	조합
+Coin exchange	코인 교환
+Monster drops	몬스터 소재
+Monster materials	몬스터 소재
+Monster	몬스터
+Quest	퀘스트
+Quest supplies	지급품
+Supply item	지급품
+Guild rewards	길드 보수
+Contribution rewards	공헌 보수
+Low Rank	하위
+High Rank	상위
+G Rank	G급
+Materials	소재
+Decoration	장식주
+Decorations	장식주
+Map	맵
+Rare	희귀
+Normal	일반
+Common	일반
+Great Sword	대검
+Long Sword	태도
+Sword & Shield	한손검
+Dual Blades	쌍검
+Hammer	해머
+Hunting Horn	수렵피리
+Lance	랜스
+Gunlance	건랜스
+Switch Axe	슬래시액스
+Charge Blade	차지액스
+Insect Glaive	조충곤
+Light Bowgun	라이트보우건
+Heavy Bowgun	헤비보우건
+Bow	활
+Poison	독
+Paralysis	마비
+Para	마비
+Sleep	수면
+Blast	폭파
+Base Camp	베이스캠프
+Village	마을
+Hub	집회소
+Prowler	냥터
+Insects & fish	곤충 · 물고기
+Ores & bones	광석 · 뼈
+Plants & mushrooms	식물 · 버섯
+Supplies & tools	지급품 · 도구
+Tickets & coins	티켓 · 코인
+Other items	기타 아이템
+Crafting byproducts	제작 부산물
+Equipment byproducts	장비 부산물
+No recipes found	레시피가 없습니다
+Prowler gathering	냥터 채집
