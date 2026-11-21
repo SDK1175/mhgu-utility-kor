@@ -114,7 +114,7 @@ pub fn decode(m:&impl Memory,base:u32,out:&mut Snapshot)->Result<(),Status>{out.
    // a null level row also makes that native helper return0.
    let level=(self.half(record+4)?>>5)&31;
    let lookup:unsafe extern "C" fn(u32,u32)->u32=unsafe{mem::transmute(level_getter)};
-   let row=unsafe{lookup(resource,u32::from(level))};d(25,row,level,self.word(row).unwrap_or(1),0);decode_weapon_row(self,self.base,row)
+   let row=unsafe{lookup(resource,u32::from(level))};d(25,row,u32::from(level),self.word(row).unwrap_or(1),0);decode_weapon_row(self,self.base,row)
   }
  }
  pub fn refresh()->bool{let b=forge::mem::text_addr();let r=unsafe{decode(&Direct{base:b},b,&mut*STATE.0.get())};
