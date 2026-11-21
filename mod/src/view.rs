@@ -13,10 +13,10 @@ impl Canvas{
  fn paragraph(&self,x:f32,y:f32,w:f32,t:&str,color:u32,size:f32,skip:usize,limit:usize)->usize{let t=super::ko::expand(super::ko::tr(t));let t:&str=&t;
   super::skill_text::lines(t,w,|ch|{let mut b=[0;4];super::game_ui::width(size,ch.encode_utf8(&mut b))},|i,line|{if i>=skip&&i-skip<limit{self.text(x,y+(i-skip)as f32*(size+4.0),line,color,size);}})
  }
- fn hint(&self,x:f32,y:f32,t:&str,c:u32,size:f32){let t=super::ko::tr(t);if self.desktop{let translated=desktop::prompt(t);self.text(x,y,translated.str(),c,size);}else{self.text(x,y,t,c,size);}}
+ fn hint(&self,x:f32,y:f32,t:&str,c:u32,size:f32){let t=super::ko::tr(t);if self.desktop{let translated=desktop::prompt(t);self.text(x,y,translated.str(),c,size);}else{let pad=desktop::pad_prompt(t);self.text(x,y,pad.str(),c,size);}}
  fn frame(&self,id:usize,x:f32,y:f32,w:f32,h:f32,color:u32){let p=self.v(x,y);super::game_ui::frame(&self.d,id,[p.x,p.y,w*self.s,h*self.s],color,self.s);}
  fn card(&self,x:f32,y:f32,w:f32,h:f32,selected:bool){self.rect(x,y,w,h,if selected{0xff274653}else{PANEL});self.frame(1,x,y,w,h,if selected{GOLD}else{0xffb5b0a5});}
- fn button(&self,index:usize,x:f32,y:f32,label:&str){let label=super::ko::tr(label);if self.desktop{let mut t=Text::new();let _=write!(t,"{}  {}",["F9","Ctrl+F","Esc","Enter"][index],label);self.text(x,y+2.0,t.str(),TEXT,17.0);return;}let p=self.v(x,y);super::game_ui::button(&self.d,index,[p.x,p.y,23.0*self.s,23.0*self.s]);self.text(x+31.0,y+2.0,label,TEXT,17.0);}
+ fn button(&self,index:usize,x:f32,y:f32,label:&str){let label=super::ko::tr(label);if self.desktop{let mut t=Text::new();let _=write!(t,"{}  {}",["F9","Ctrl+F","Esc","Enter"][index],label);self.text(x,y+2.0,t.str(),TEXT,17.0);return;}let p=self.v(x,y);let letter=desktop::pad_letter(b"YXAB"[index.min(3)]);let index=b"YXAB".iter().position(|&l|l==letter).unwrap_or(index);super::game_ui::button(&self.d,index,[p.x,p.y,23.0*self.s,23.0*self.s]);self.text(x+31.0,y+2.0,label,TEXT,17.0);}
  fn clip(&self,x:f32,y:f32,w:f32,h:f32){self.d.push_clip_rect(self.v(x,y),self.v(x+w,y+h),true);}
  fn endclip(&self){self.d.pop_clip_rect();}
  fn sprite(&self,id:usize,x:f32,y:f32,size:f32){let pos=self.v(x,y);super::ui_art::compendium_sprite_preview(id as u32,pos.x,pos.y,size*self.s,size*self.s);}

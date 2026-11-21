@@ -7,7 +7,22 @@ static mut MOUSE_FREE:bool=false;
 // numbers are the keyboard's scancodes, so they are asked for by number.
 unsafe extern "C"{#[link_name="forge_input_isKeyPressed"]fn key_pressed_raw(key:u32)->bool;
  // The port's ordered key presses (MHXX Recomp 0.10.8+): polling once a frame reorders fast typing. 0 from an older port.
- fn mhxx_input_keyQueue()->u32;fn mhxx_input_popKey()->u32;}
+ fn mhxx_input_keyQueue()->u32;fn mhxx_input_popKey()->u32;
+ // The Xbox letter that presses Switch A/B/X/Y (0..3) with the player's [Controller] / FaceButtons settings, as the
+ // game's own prompts show it (MHXX Recomp 0.10.8+; 0 from an older port or other prompts).
+ fn mhxx_input_faceLabel(button:u32)->u32;}
+/// A prompt's button letter as the player's controller has it. The prompts name a Switch button by the Xbox letter at
+/// its place (A "B", B "A", X "Y", Y "X"); with buttons swapped in the port's settings, that letter would be wrong.
+pub fn pad_letter(letter:u8)->u8{
+ let button=match letter{b'B'=>0,b'A'=>1,b'Y'=>2,b'X'=>3,_=>return letter};
+ let l=unsafe{mhxx_input_faceLabel(button)};if matches!(l,0x41|0x42|0x58|0x59){l as u8}else{letter}
+}
+/// The controller prompts' letters ("B: 선택", "Y  퀘스트 추천") as pad_letter says.
+pub fn pad_prompt(label:&str)->super::Text{use core::fmt::Write;let mut out=super::Text::new();let b=label.as_bytes();let mut i=0;
+ while i<label.len(){let start=i==0||b[i-1].is_ascii_whitespace();
+  if start&&matches!(b[i],b'A'|b'B'|b'X'|b'Y')&&matches!(b.get(i+1),Some(b':'|b' ')|None){let c=[pad_letter(b[i])];let _=out.write_str(core::str::from_utf8(&c).unwrap_or(""));i+=1;continue;}
+  let ch=label[i..].chars().next().unwrap();let _=write!(out,"{}",ch);i+=ch.len_utf8();}
+ out}
 const BACK:u16=0xffff;const HANENG:u16=0xfffe;
 /// This frame's typing in order: a character (bit 8: Shift), BACK, HANENG.
 fn typing(out:&mut[u16;40])->(usize,bool){

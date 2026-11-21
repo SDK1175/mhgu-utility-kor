@@ -144,6 +144,49 @@ fn decode(src: &[u8], out: &mut Vec<u8>, map: &[(u32, u16)]) -> bool {
     hangul
 }
 
+/// The Korean of a GMD's strings these keys want; into `n` when given, else only counted.
+fn fill(data: &[u8], want: &[(u16, u16)], map: &[(u32, u16)], mut n: Option<&mut Names>) -> usize {
+    let Some((body, count)) = strings(data) else { return 0 };
+    let mut scratch = Vec::new();
+    let mut korean = 0;
+    let mut next = 0;
+    for (index, row) in body.split(|&b| b == 0).take(count).enumerate() {
+        while next < want.len() && (want[next].0 as usize) < index {
+            next += 1;
+        }
+        if next == want.len() {
+            break;
+        }
+        if want[next].0 as usize != index {
+            continue;
+        }
+        match n.as_deref_mut() {
+            Some(n) => {
+                let start = n.pool.len();
+                if decode(row, &mut n.pool, map) {
+                    let len = (n.pool.len() - start) as u32;
+                    for &(i, slot) in &want[next..] {
+                        if i as usize != index {
+                            break;
+                        }
+                        n.spans[slot as usize] = (start as u32, len);
+                        korean += 1;
+                    }
+                } else {
+                    n.pool.truncate(start);
+                }
+            }
+            None => {
+                if decode(row, &mut scratch, map) {
+                    korean += want[next..].iter().take_while(|&&(i, _)| i as usize == index).count();
+                }
+                scratch.clear();
+            }
+        }
+    }
+    korean
+}
+
 fn load(n: &mut Names) {
     n.loaded = true;
     n.spans = alloc::vec![(0, 0); keys::KEYS.len()];
@@ -158,41 +201,39 @@ fn load(n: &mut Names) {
     let mut names = 0;
     let mut missing = 0;
     let mut japanese = 0;
+    let mut quiet = 0;
     for (f, paths) in keys::FILES.iter().enumerate() {
-        let Some(data) = paths.iter().find_map(|p| read(p)) else {
+        let want = keys::BY_FILE[f];
+        // The file of the candidates (the patch's GMD, the game's own) with the most of these names in Korean
+        let mut best: Option<(usize, Vec<u8>)> = None;
+        let mut found = false;
+        for p in paths.iter() {
+            let Some(data) = read(p) else { continue };
+            found = true;
+            let korean = fill(&data, want, &map, None);
+            if korean > best.as_ref().map_or(0, |b| b.0) {
+                best = Some((korean, data));
+            }
+        }
+        if !found {
             if missing < 8 {
                 info!("Korean: no {} in the game", paths[0]);
             }
             missing += 1;
             continue;
-        };
-        let Some((body, count)) = strings(&data) else { continue };
-        files += 1;
-        let want = keys::BY_FILE[f];
-        let mut next = 0;
-        for (index, row) in body.split(|&b| b == 0).take(count).enumerate() {
-            while next < want.len() && (want[next].0 as usize) < index {
-                next += 1;
-            }
-            if next == want.len() {
-                break;
-            }
-            if want[next].0 as usize == index {
-                let start = n.pool.len();
-                if decode(row, &mut n.pool, &map) {
-                    for &(i, slot) in &want[next..] {
-                        if i as usize != index {
-                            break;
-                        }
-                        n.spans[slot as usize] = (start as u32, (n.pool.len() - start) as u32);
-                        names += 1;
-                    }
-                } else {
-                    n.pool.truncate(start);
-                    japanese += 1;
-                }
-            }
         }
+        files += 1;
+        let Some((_, data)) = best else {
+            japanese += want.len();
+            if quiet < 8 {
+                info!("Korean: {} has none of its {} names in Korean", paths[0], want.len());
+            }
+            quiet += 1;
+            continue;
+        };
+        let korean = fill(&data, want, &map, Some(n));
+        names += korean;
+        japanese += want.len() - korean;
     }
     info!("Korean: {names} game names from {files} of {} tables ({japanese} not Korean: the game's own text)", keys::FILES.len());
 }
