@@ -34,31 +34,35 @@ pub fn decode_weapon_row(m:&impl Memory,b:u32,row:u32)->Option<u8>{
  let offset=load&0xfff;if offset>=64{return None;}
  m.byte(row.checked_add(offset)?).filter(|n|*n<=3)
 }
-fn capture(m:&impl Memory,b:u32,s:&mut Snapshot)->Result<(),Status>{
+// Korean fork, diagnosis: the last step capture reached and its values (logged by refresh when it fails).
+pub static mut DIAG:[u32;5]=[0;5];
+fn d(step:u32,a:u32,b:u32,c:u32,e:u32){unsafe{DIAG=[step,a,b,c,e];}}
+fn capture(m:&impl Memory,b:u32,s:&mut Snapshot)->Result<(),Status>{d(1,b,0,0,0);
  let unavailable=Status::Unavailable;let invalid=Status::InvalidData;
  let save=m.word(b.checked_add(0x1897f78).ok_or(invalid)?).ok_or(unavailable)?;
- let bx=m.word(b+0x1856fe8).ok_or(unavailable)?;let gc=m.word(b+0x188ca48).ok_or(unavailable)?;let manager=m.word(b+0x1885b58).ok_or(unavailable)?;
+ let bx=m.word(b+0x1856fe8).ok_or(unavailable)?;let gc=m.word(b+0x188ca48).ok_or(unavailable)?;let manager=m.word(b+0x1885b58).ok_or(unavailable)?;d(2,save,bx,gc,manager);
  if !valid(save)||!valid(bx)||!valid(gc)||!valid(manager){return Err(unavailable);}
+ d(3,m.word(save).unwrap_or(1),b+0x176af48,m.word(bx).unwrap_or(1),b+0x173e3d0);
  if m.word(save)!=Some(b+0x176af48)||m.word(bx)!=Some(b+0x173e3d0){return Err(Status::UnsupportedBuild);}
  // Town-only capture avoids departure/replacement and Prowler equipment data.
- if m.byte(gc+0x4c).ok_or(unavailable)?>7{return Err(unavailable);}
- let local=m.word(gc+0x30).ok_or(unavailable)?;if local>=4{return Err(invalid);}
- let actor=m.word(manager+0x1c+local*4).ok_or(unavailable)?;if !valid(actor){return Err(unavailable);}
- let pd=m.word(actor+0x13c4).ok_or(unavailable)?;if !valid(pd){return Err(unavailable);}
- let gender=m.byte(pd+0x4d8).ok_or(unavailable)?;if gender>1{return Err(invalid);}
+ d(4,m.byte(gc+0x4c).map_or(999,u32::from),0,0,0);if m.byte(gc+0x4c).ok_or(unavailable)?>7{return Err(unavailable);}
+ let local=m.word(gc+0x30).ok_or(unavailable)?;d(5,local,0,0,0);if local>=4{return Err(invalid);}
+ let actor=m.word(manager+0x1c+local*4).ok_or(unavailable)?;d(6,actor,0,0,0);if !valid(actor){return Err(unavailable);}
+ let pd=m.word(actor+0x13c4).ok_or(unavailable)?;d(7,pd,0,0,0);if !valid(pd){return Err(unavailable);}
+ let gender=m.byte(pd+0x4d8).ok_or(unavailable)?;d(8,u32::from(gender),m.word(pd+0x14c).unwrap_or(999),m.half(pd+0x554).map_or(999,u32::from),0);if gender>1{return Err(invalid);}
  let wt=m.word(pd+0x14c).ok_or(unavailable)?;
  let hunter=match wt{4|6|10=>1,0..=3|7..=9|11..=14=>0,_=>return Err(unavailable)};
  let hr=m.half(pd+0x554).ok_or(unavailable)?;if hr==0||hr>999{return Err(invalid);}
  // Native weapon types are record tags7..21 (tag12 is the unused weapon5).
  let weapon=pd+0x18;let weapon_bits=m.half(weapon+4).ok_or(unavailable)?;let weapon_id=m.half(weapon+6).ok_or(unavailable)?;
- if u32::from(weapon_bits&31)!=wt+7||weapon_id==0{return Err(invalid);}
- let slots=m.equipment_slots(weapon).ok_or(unavailable)?;if slots>3{return Err(invalid);}
+ d(9,u32::from(weapon_bits),u32::from(weapon_id),wt,0);if u32::from(weapon_bits&31)!=wt+7||weapon_id==0{return Err(invalid);}
+ d(10,0,0,0,0);let slots=m.equipment_slots(weapon).ok_or(unavailable)?;if slots>3{return Err(invalid);}
  let flags=m.word(save+0x958).ok_or(unavailable)?;let expansions=m.word(save+0x3614).ok_or(unavailable)?;
- s.capacity=capacity(flags,expansions);if s.capacity>MAX_EQUIPMENT{return Err(Status::CapacityExceeded);}
+ d(11,flags,expansions,0,0);s.capacity=capacity(flags,expansions);if s.capacity>MAX_EQUIPMENT{return Err(Status::CapacityExceeded);}
  // Scan the entire proven physical array, not a hard-coded 1000-charms prefix.
  // A record beyond currently unlocked capacity is inconsistent, never ignored.
  for i in 0..MAX_EQUIPMENT{
-  let p=bx+0x1c+i as u32*44;let bits=m.half(p+4).ok_or(unavailable)?;let ty=(bits&31)as u8;
+  let p=bx+0x1c+i as u32*44;let bits=m.half(p+4).ok_or(unavailable)?;let ty=(bits&31)as u8;d(12,i as u32,u32::from(bits),m.half(p+6).map_or(0,u32::from),s.capacity as u32);
   if ty==0{continue;}
   if i>=s.capacity{return Err(invalid);}
   if ty>24{return Err(invalid);}
@@ -76,6 +80,7 @@ fn capture(m:&impl Memory,b:u32,s:&mut Snapshot)->Result<(),Status>{
   if m.half(p+4)!=Some(bits)||m.half(p+6)!=Some(id){return Err(Status::Changed);}
  }
  // Do not publish a snapshot across character/scene replacement.
+ d(13,0,0,0,0);
  if m.word(b+0x1897f78)!=Some(save)||m.word(b+0x1856fe8)!=Some(bx)||m.word(b+0x188ca48)!=Some(gc)||m.word(b+0x1885b58)!=Some(manager)||m.word(gc+0x30)!=Some(local)||m.word(manager+0x1c+local*4)!=Some(actor)||m.word(actor+0x13c4)!=Some(pd)||m.word(save+0x958)!=Some(flags)||m.word(save+0x3614)!=Some(expansions)||m.byte(gc+0x4c).is_none_or(|v|v>7)||m.byte(pd+0x4d8)!=Some(gender)||m.word(pd+0x14c)!=Some(wt)||m.half(pd+0x554)!=Some(hr)||m.half(weapon+4)!=Some(weapon_bits)||m.half(weapon+6)!=Some(weapon_id)||m.equipment_slots(weapon)!=Some(slots){return Err(Status::Changed);}
  s.gender=Some(gender);s.hunter=Some(hunter);s.weapon_slots=Some(slots);s.hr=Some(hr);s.status=Status::Ready;Ok(())
 }
@@ -91,27 +96,34 @@ pub fn decode(m:&impl Memory,base:u32,out:&mut Snapshot)->Result<(),Status>{out.
   fn byte(&self,a:u32)->Option<u8>{Some(unsafe{ptr::read_volatile(a as *const u8)})}
   fn equipment_slots(&self,record:u32)->Option<u8>{
    // f_2db5c4 resolves resident equipment tables and reads slot metadata only.
+   d(20,self.word(self.base+0xdb5c4).unwrap_or(1),self.word(self.base+0x13f03c).unwrap_or(1),self.word(self.base+0x13c208).unwrap_or(1),0);
    if self.word(self.base+0xdb5c4)!=Some(0xe92d4830)||self.word(self.base+0x13f03c)!=Some(0xe1d120b4)||self.word(self.base+0x13c208)!=Some(0xe92d4070){return None;}
    let ty=u32::from(self.half(record+4)?&31);let id=u32::from(self.half(record+6)?);
    if !(7..=21).contains(&ty)||ty==12||id==0{return None;}
    // f_33c208 weapon switch reads these resident tables. Check the table and
    // its count before calling its resolver; a missing resource also yields0
    // from f_2db5c4 and must not masquerade as a valid zero-slot weapon.
-   let root=self.word(self.base+0x1856b18)?;if !valid(root){return None;}
+   let root=self.word(self.base+0x1856b18)?;d(21,root,ty,id,0);if !valid(root){return None;}
    let offset=0x50+4*(ty-7-u32::from(ty>12));let table=self.word(root+offset)?;
-   if !valid(table)||id>=self.word(table+0x64)?{return None;}
+   d(22,table,self.word(table+0x64).unwrap_or(1),id,0);if !valid(table)||id>=self.word(table+0x64)?{return None;}
    let resolve:unsafe extern "C" fn(u32,u32)->u32=unsafe{mem::transmute(self.base+0x13f03c)};
-   let resource=unsafe{resolve(root,record)};if !valid(resource){return None;}
-   let vtable=self.word(resource)?;if vtable&3!=0||vtable<self.base||vtable>=self.base+0x1850000{return None;}
+   let resource=unsafe{resolve(root,record)};d(23,resource,0,0,0);if !valid(resource){return None;}
+   let vtable=self.word(resource)?;d(24,vtable,self.word(vtable+0xd8).unwrap_or(1),0,0);if vtable&3!=0||vtable<self.base||vtable>=self.base+0x1850000{return None;}
    let level_getter=self.word(vtable+0xd8)?;if level_getter&3!=0||level_getter<self.base||level_getter>=self.base+0x13f2000{return None;}
    // The weapon branch of f_2db5c4 first resolves the selected upgrade level;
    // a null level row also makes that native helper return0.
    let level=(self.half(record+4)?>>5)&31;
    let lookup:unsafe extern "C" fn(u32,u32)->u32=unsafe{mem::transmute(level_getter)};
-   let row=unsafe{lookup(resource,u32::from(level))};decode_weapon_row(self,self.base,row)
+   let row=unsafe{lookup(resource,u32::from(level))};d(25,row,level,self.word(row).unwrap_or(1),0);decode_weapon_row(self,self.base,row)
   }
  }
- pub fn refresh()->bool{let b=forge::mem::text_addr();unsafe{decode(&Direct{base:b},b,&mut*STATE.0.get()).is_ok()}}
+ pub fn refresh()->bool{let b=forge::mem::text_addr();let r=unsafe{decode(&Direct{base:b},b,&mut*STATE.0.get())};
+  // Korean fork, diagnosis: where capture stopped (once per distinct place and values)
+  static mut LAST:[u32;6]=[0;6];
+  if let Err(status)=r{let v=unsafe{DIAG};let key=[status as u32,v[0],v[1],v[2],v[3],v[4]];
+   if unsafe{LAST}!=key{unsafe{LAST=key;}forge::log::prelude::warn!("set_player: {:?} at step {} [{:#x} {:#x} {:#x} {:#x}] (text {:#x})",status,v[0],v[1],v[2],v[3],v[4],b);}}
+  else{forge::log::prelude::info!("set_player: ready, {} armor, {} charms, HR {:?}",snapshot().owned_count,snapshot().charm_count,snapshot().hr);}
+  r.is_ok()}
  pub fn snapshot()->&'static Snapshot{unsafe{&*STATE.0.get()}}
 }
 #[cfg(not(test))]pub use live::*;
