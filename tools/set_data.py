@@ -8,9 +8,14 @@ import json
 import os
 import sqlite3
 import struct
+import sys
 from pathlib import Path
 from game_names import strings
-from skill_effects import descriptions, pack
+try:  # Korean fork: the translated explanations
+    sys.path.insert(0, str(Path(__file__).resolve().parent / 'kor'))
+    from skill_effects_ko import descriptions, pack
+except ImportError:
+    from skill_effects import descriptions, pack
 from paths import DATA, GENERATED, database
 
 THRESHOLDS = (-20, -15, -10, 10, 15, 20, 25)

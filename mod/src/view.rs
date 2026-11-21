@@ -10,7 +10,7 @@ impl Canvas{
  fn rect(&self,x:f32,y:f32,w:f32,h:f32,c:u32){self.d.add_rect_filled(self.v(x,y),self.v(x+w,y+h),c,1.0*self.s);}
  fn line(&self,x:f32,y:f32,x2:f32,y2:f32,c:u32){self.d.add_line(self.v(x,y),self.v(x2,y2),c,self.s);}
  fn text(&self,x:f32,y:f32,t:&str,c:u32,size:f32){super::game_ui::text(&self.d,self.f,size*self.s,self.v(x,y),c,super::ko::tr(t));}
- fn paragraph(&self,x:f32,y:f32,w:f32,t:&str,color:u32,size:f32,skip:usize,limit:usize)->usize{let t=super::ko::tr(t);
+ fn paragraph(&self,x:f32,y:f32,w:f32,t:&str,color:u32,size:f32,skip:usize,limit:usize)->usize{let t=super::ko::expand(super::ko::tr(t));let t:&str=&t;
   super::skill_text::lines(t,w,|ch|{let mut b=[0;4];super::game_ui::width(size,ch.encode_utf8(&mut b))},|i,line|{if i>=skip&&i-skip<limit{self.text(x,y+(i-skip)as f32*(size+4.0),line,color,size);}})
  }
  fn hint(&self,x:f32,y:f32,t:&str,c:u32,size:f32){let t=super::ko::tr(t);if self.desktop{let translated=desktop::prompt(t);self.text(x,y,translated.str(),c,size);}else{self.text(x,y,t,c,size);}}

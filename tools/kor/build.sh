@@ -21,6 +21,7 @@ echo "== 3/5 Korean name keys and dictionary"
 if [ ! -f build/generated/item_data.rs ]; then
   echo "first time: running tools/kor/setup.sh (slow)"; bash tools/kor/setup.sh "$GU"
 else
+  MHGU_DATABASE="$PWD/inputs/mhgu.db" MHGU_GAME_DIR="$GU" python3 tools/set_data.py   # (skill explanations)
   python3 tools/kor/keys.py "$GU"
   python3 tools/kor/dict.py
   git checkout -- mod/src/ko_dict.rs 2>/dev/null || true

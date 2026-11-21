@@ -7,7 +7,7 @@
 //!   ko_keys (tools/kor/keys.py). Nothing of the game's text is in the plugin.
 //! - Everything else: ko_dict (tools/kor/ui_ko.tsv), our own translations.
 //! A string that is neither (or a name the game's file has no Korean for: an unpatched game) is drawn as it is.
-use alloc::vec::Vec;
+use alloc::{borrow::Cow, string::String, vec::Vec};
 use core::cell::UnsafeCell;
 use core::ffi::{c_char, c_void};
 use forge::log::prelude::info;
@@ -222,3 +222,24 @@ pub fn tr(s: &str) -> &str {
 }
 
 pub fn is_hangul(c: char) -> bool { matches!(c as u32, 0x1100..=0x11FF | 0x3131..=0x318E | 0xAC00..=0xD7A3) }
+
+/// `{{English name}}` in a text (the translated skill explanations, tools/kor/skill_effects_ko.py) as the game's name.
+pub fn expand(s: &str) -> Cow<'_, str> {
+    if !s.contains("{{") {
+        return Cow::Borrowed(s);
+    }
+    let mut out = String::with_capacity(s.len() + 64);
+    let mut rest = s;
+    while let Some(open) = rest.find("{{") {
+        out.push_str(&rest[..open]);
+        let after = &rest[open + 2..];
+        let Some(close) = after.find("}}") else {
+            out.push_str(&rest[open..]);
+            return Cow::Owned(out);
+        };
+        out.push_str(tr(&after[..close]));
+        rest = &after[close + 2..];
+    }
+    out.push_str(rest);
+    Cow::Owned(out)
+}
