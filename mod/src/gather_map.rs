@@ -21,6 +21,11 @@ static mut UPDATE_HOOK:Hook=Hook([0;19]);
 static mut DROP_HOOK:Hook=Hook([0;19]);
 unsafe extern "C"{#[link_name="forge_hook_create"]fn hook(out:*mut Hook,target:u32,detour:u32,original:*mut u32)->*mut Hook;}
 fn address(pc:u32)->u32{gd(forge::mem::text_addr(),pc-0x200000)}
+// Korean fork (MHXX Recomp): a function pointer read from the game is MHXX's real one; the port says which that is.
+unsafe extern "C"{fn mhxx_gu_code(offset:u32)->u32;}
+fn code(pc:u32)->u32{let a=unsafe{mhxx_gu_code(pc-0x200000)};if a!=0{a}else{address(pc)}}
+/// (diagnosis: the first time the map update stops at a step, logged once)
+fn note(step:u32){static mut SEEN:u32=0;unsafe{if SEEN&(1<<step)==0{SEEN|=1<<step;forge::log::prelude::warn!("Gathering map: update stops at step {step}");}}}
 fn valid(p:u32,size:u32)->bool{p>=0x08000000&&p&3==0&&p.checked_add(size).is_some_and(|end|end<=0xa8000000)}
 unsafe fn read(p:u32,offset:u32)->u32{unsafe{ptr::read_unaligned((p+offset)as *const u32)}}
 unsafe fn call1(pc:u32,a:u32)->u32{unsafe{let f:unsafe extern "C" fn(u32)->u32=mem::transmute(address(pc));f(a)}}
@@ -94,16 +99,16 @@ unsafe fn create(map:&mut Map,slot:usize,item:u16,ui:u32)->bool{unsafe{
 }}
 #[unsafe(no_mangle)]pub unsafe extern "C" fn compendium_gather_update(ui:u32){unsafe{
  let original:unsafe extern "C" fn(u32)=mem::transmute(UPDATE);original(ui);
- if !ENABLED||!valid(ui,0xe0){return;}
- let layout=read(ui,0x24);let object=read(ui,0xcc);if !valid(layout,0x29c)||!valid(object,0x98){return;}
+ if !ENABLED||!valid(ui,0xe0){note(0);return;}
+ let layout=read(ui,0x24);let object=read(ui,0xcc);if !valid(layout,0x29c)||!valid(object,0x98){note(1);return;}
  let table=read(object,0);let main=forge::mem::text_addr();
- if table<main+0x1400000||table>main+0x2140000-0x70{return;}
- let project=read(table,0x6c);if project!=address(0x81bde8)&&project!=address(0x81cacc){return;}
- let Some(map)=map_for(layout,read(ui,0xd4),read(ui,0xd0))else{return;};
+ if !((main+0x1400000..=main+0x2140000-0x70).contains(&table)||(0x0020_0000..0x0240_0000).contains(&table)){note(2);return;}
+ let project=read(table,0x6c);if ![address(0x81bde8),address(0x81cacc),code(0x81bde8),code(0x81cacc)].contains(&project){note(3);return;}
+ let Some(map)=map_for(layout,read(ui,0xd4),read(ui,0xd0))else{note(4);return;};
  if !SHOW||crate::context::location().is_none(){hide(map);return;}
  let pop=read(address(0x1a89ec0),0);
- if !valid(pop,0xe8)||read(pop,0)!=address(0x19524cc){hide(map);return;}
- let pool=read(pop,0x24);if !valid(pool,0x80*gather::CAPACITY as u32){hide(map);return;}
+ if !valid(pop,0xe8)||read(pop,0)!=address(0x19524cc){note(5);hide(map);return;}
+ let pool=read(pop,0x24);if !valid(pool,0x80*gather::CAPACITY as u32){note(6);hide(map);return;}
  let accepts:unsafe extern "C" fn(u32,u32)->u32=mem::transmute(read(table,0x64));
  let project:unsafe extern "C" fn(u32,*const f32,*mut f32,u32)=mem::transmute(project);
  let mut positions=[[0.;2];gather::CAPACITY];let mut slots=[0usize;gather::CAPACITY];let mut items=[0u16;gather::CAPACITY];let mut count=0;
