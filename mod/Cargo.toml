@@ -11,6 +11,7 @@ bench = false
 
 
 [dependencies]
+miniz_oxide = { version = "0.8", default-features = false, features = ["with-alloc"] }
 mhgu-forge = { git = "https://github.com/Lawrence-al/forge-rs", rev = "f2af0622a2a0aa291ffbd3d2f7628c0e2d96d220", default-features = false, features = ["imgui", "mt"] }
 
 [profile.release]

@@ -1,5 +1,5 @@
 //! The 2350 Hangul syllables of KS X 1001 in its order (EUC-KR rows 0xB0..0xC8, columns 0xA1..0xFE).
-//! The Korean patch for MHXX writes the n-th of them as U+7A00 + n (it draws them over those kanji).
+//! The Korean patch for MHXX writes the n-th of them as the n-th kanji of its font from U+7A00 on (ko.rs).
 //! Generated with Python's cp949 codec: [ord(bytes([0xB0 + i // 94, 0xA1 + i % 94]).decode('cp949')) for i in range(2350)]
 pub static SYLLABLES: [u16; 2350] = [
     0xac00, 0xac01, 0xac04, 0xac07, 0xac08, 0xac09, 0xac0a, 0xac10, 0xac11, 0xac12, 0xac13, 0xac14,

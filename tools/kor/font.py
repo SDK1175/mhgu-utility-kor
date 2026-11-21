@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / 'tools/kor'))
 from dict import entries
 
 codes = {ord(bytes([0xB0 + i // 94, 0xA1 + i % 94]).decode('cp949')) for i in range(2350)}
-codes |= set(range(0x3131, 0x318F)) | {0xB7}
+codes |= set(range(0x3131, 0x318F)) | set(range(0x2460, 0x2474)) | {0xB7}
 codes |= {ord(c) for v in entries().values() for c in v if 0xAC00 <= ord(c) <= 0xD7A3}
 subprocess.run(['pyftsubset', sys.argv[1], '--unicodes=' + ','.join('U+%04X' % c for c in sorted(codes)),
                 '--output-file=' + str(ROOT / 'mod/assets/paperlogy-ko.ttf'), '--no-hinting', '--desubroutinize'],

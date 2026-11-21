@@ -1,8 +1,9 @@
 //! Korean fork: the text drawn in Korean.
 //!
 //! - Game names (items, weapons, armor, skills, ...): read when the utility first draws, from the game's own tables
-//!   (the GMDs the game reads, so a Korean patch's when one is installed). The patch writes Hangul as the kanji from
-//!   U+7A00 (the n-th KS X 1001 syllable as U+7A00 + n), decoded here. Which GMD string an English name is comes from
+//!   (the GMDs the game reads, so a Korean patch's when one is installed). The patch writes Hangul as kanji: its font
+//!   (resident.arc, font_festa) draws the 2350 KS X 1001 syllables over the glyphs from the one at U+7A00, in order,
+//!   so the n-th code from there in that font is the n-th syllable. That table is read from the font here. Which GMD string an English name is comes from
 //!   ko_keys (tools/kor/keys.py). Nothing of the game's text is in the plugin.
 //! - Everything else: ko_dict (tools/kor/ui_ko.tsv), our own translations.
 //! A string that is neither (or a name the game's file has no Korean for: an unpatched game) is drawn as it is.
@@ -33,7 +34,10 @@ static NAMES: Local = Local(UnsafeCell::new(Names { loaded: false, pool: Vec::ne
 
 const MAX_FILE: i64 = 8 << 20;
 
-fn read(path: &str) -> Option<Vec<u8>> {
+fn read(path: &str) -> Option<Vec<u8>> { read_at(path, 0, None) }
+
+/// `size` bytes of a RomFS file from `offset` (None: the rest of the file).
+fn read_at(path: &str, offset: usize, size: Option<usize>) -> Option<Vec<u8>> {
     let mount = forge::fs::romfs::mount_point();
     let mut full = Vec::with_capacity(mount.len() + path.len() + 3);
     full.extend_from_slice(mount.as_bytes());
@@ -44,12 +48,17 @@ fn read(path: &str) -> Option<Vec<u8>> {
     if unsafe { open_file(&mut file, full.as_ptr().cast(), 1) } != 0 {
         return None;
     }
+    let want = size;
     let mut size = 0i64;
     let mut data = Vec::new();
-    let mut ok = unsafe { get_file_size(&mut size, file) } == 0 && (41..=MAX_FILE).contains(&size);
+    let mut ok = unsafe { get_file_size(&mut size, file) } == 0 && (offset as i64) < size;
     if ok {
-        data.resize(size as usize, 0);
-        ok = unsafe { read_file(file, 0, data.as_mut_ptr().cast(), data.len()) } == 0;
+        let len = want.unwrap_or(size as usize - offset);
+        ok = len as i64 <= MAX_FILE && (offset + len) as i64 <= size;
+        if ok {
+            data.resize(len, 0);
+            ok = unsafe { read_file(file, offset as i64, data.as_mut_ptr().cast(), len) } == 0;
+        }
     }
     unsafe { close_file(file) };
     ok.then_some(data)
@@ -67,19 +76,66 @@ fn strings(d: &[u8]) -> Option<(&[u8], usize)> {
     (start <= d.len()).then(|| (&d[start..], count))
 }
 
+const ARC_GFD: u32 = 0x2d46_2600;
+const SYLLABLES: usize = 2350;
+
+/// The patch's codes, in syllable order (KS X 1001), from the font the game draws its text with; empty when that font
+/// is not the patch's (no glyph at U+7A00).
+fn patch_codes() -> Vec<u32> {
+    let path = "nativeNX/arc/resident.arc";
+    let Some(head) = read_at(path, 0, Some(12)) else { return Vec::new() };
+    if &head[..4] != b"ARC\0" {
+        return Vec::new();
+    }
+    let count = u16::from_le_bytes([head[6], head[7]]) as usize;
+    let Some(table) = read_at(path, 12, Some(count * 80)) else { return Vec::new() };
+    for e in table.chunks_exact(80) {
+        let name = &e[..64];
+        let end = name.iter().position(|&b| b == 0).unwrap_or(64);
+        if u32_at(e, 64) as u32 != ARC_GFD || !name[..end].to_ascii_lowercase().ends_with(b"font_festa") {
+            continue;
+        }
+        let (csize, usize_, off) = (u32_at(e, 68), u32_at(e, 72) & 0x1fff_ffff, u32_at(e, 76));
+        let Some(packed) = read_at(path, off, Some(csize)) else { break };
+        let Ok(g) = miniz_oxide::inflate::decompress_to_vec_zlib_with_limit(&packed, usize_.max(1)) else { break };
+        if g.len() < 0x48 || &g[..3] != b"GFD" {
+            break;
+        }
+        let (n, name) = (u32_at(&g, 0x1c), u32_at(&g, 0x40));
+        let mut base = 0x44 + name + 1;
+        if base + n * 20 != g.len() {
+            let Some(b) = g.len().checked_sub(n * 20) else { break };
+            base = b;
+        }
+        let codes: Vec<u32> = (0..n).map(|i| u32_at(&g, base + i * 20) as u32).collect();
+        let Some(first) = codes.iter().position(|&c| c >= 0x7A00) else { break };
+        if codes[first] != 0x7A00 || first + SYLLABLES > codes.len() {
+            break;
+        }
+        return codes[first..first + SYLLABLES].to_vec();
+    }
+    Vec::new()
+}
+
 /// The patch's text as Unicode Hangul; None when it is not Korean (kana or other kanji: the original Japanese).
-fn decode(src: &[u8], out: &mut Vec<u8>) -> bool {
+fn decode(src: &[u8], out: &mut Vec<u8>, map: &[(u32, u16)]) -> bool {
     let Ok(text) = core::str::from_utf8(src) else { return false };
     let mut hangul = false;
     for ch in text.chars() {
         let c = ch as u32;
+        if let Ok(i) = map.binary_search_by_key(&c, |&(code, _)| code) {
+            hangul = true;
+            let mut b = [0; 4];
+            let syllable = char::from_u32(ko_ks::SYLLABLES[map[i].1 as usize] as u32).unwrap_or('?');
+            out.extend_from_slice(syllable.encode_utf8(&mut b).as_bytes());
+            continue;
+        }
         let to = match c {
-            0x7A00..=0x832D => { hangul = true; ko_ks::SYLLABLES[(c - 0x7A00) as usize] as u32 }
             0x3000 => 0x20,
             0xFF01..=0xFF5E => c - 0xFEE0,
             0x30FB => 0xB7,
             0x30FC => '-' as u32,
-            0x3041..=0x30FA | 0x3400..=0x79FF | 0x832E..=0x9FFF => return false,
+            0x3041..=0x30FA | 0x3400..=0x9FFF => return false,
             _ => c,
         };
         let mut b = [0; 4];
@@ -92,6 +148,12 @@ fn load(n: &mut Names) {
     n.loaded = true;
     n.spans = alloc::vec![(0, 0); keys::KEYS.len()];
     n.pool = Vec::with_capacity(keys::POOL);
+    let mut map: Vec<(u32, u16)> = patch_codes().into_iter().enumerate().map(|(i, c)| (c, i as u16)).collect();
+    map.sort_unstable();
+    if map.is_empty() {
+        info!("Korean: the game's font is not the Korean patch's: names stay in English");
+        return;
+    }
     let mut files = 0;
     let mut names = 0;
     let mut missing = 0;
@@ -117,7 +179,7 @@ fn load(n: &mut Names) {
             }
             if want[next].0 as usize == index {
                 let start = n.pool.len();
-                if decode(row, &mut n.pool) {
+                if decode(row, &mut n.pool, &map) {
                     for &(i, slot) in &want[next..] {
                         if i as usize != index {
                             break;
