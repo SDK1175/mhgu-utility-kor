@@ -214,10 +214,15 @@ fn load(n: &mut Names) {
         // first, then the others for the names it lacks (MHXX patch first; the GU Korean patch for what it left Japanese)
         let mut tables: Vec<(usize, Vec<u8>)> = Vec::new();
         let mut found = false;
+        let mut seen = String::new(); // (each candidate: its size and Korean names, or "-" when unreadable; for the log)
         for p in paths.iter() {
-            let Some(data) = read(p) else { continue };
+            let Some(data) = read(p) else {
+                seen.push_str(" | -");
+                continue;
+            };
             found = true;
             let korean = fill(&data, want, &map, None);
+            seen.push_str(&alloc::format!(" | {} B, {} Korean", data.len(), korean));
             if korean > 0 {
                 tables.push((korean, data));
             }
@@ -234,7 +239,7 @@ fn load(n: &mut Names) {
         if tables.is_empty() {
             japanese += want.len();
             if quiet < 8 {
-                info!("Korean: {} has none of its {} names in Korean", paths[0], want.len());
+                info!("Korean: {} has none of its {} names in Korean (candidates{})", paths[0], want.len(), seen);
             }
             quiet += 1;
             continue;
@@ -242,6 +247,9 @@ fn load(n: &mut Names) {
         let mut korean = 0;
         for (_, data) in &tables {
             korean += fill(data, want, &map, Some(n));
+        }
+        if paths[0].contains("weapon00") || paths[0].contains("armorSeries") {
+            info!("Korean: {}: {} of {} names (candidates{})", paths[0], korean, want.len(), seen);
         }
         names += korean;
         japanese += want.len() - korean;
