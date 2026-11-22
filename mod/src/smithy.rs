@@ -36,7 +36,7 @@ pub fn install(){unsafe{
  // or wrong-version entries still fail closed. This hook does not inspect LR.
  let compatible=word==0xe92d41f0||word==0xe51ff004&&{
   let detour=ptr::read_unaligned((target+4)as *const u32);
-  (0x03200000..0x03e00000).contains(&detour)&&detour&3==0
+  (0x03200000..0x06000000).contains(&detour)&&detour&3==0
  };
  if !compatible{return;}create(&raw mut HOOK,target,update as *const () as u32,&raw mut ORIGINAL);
 }}
