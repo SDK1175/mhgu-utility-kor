@@ -1,6 +1,6 @@
 """Korean fork: the release zip, from the plugin build/hunters_compendium.nro (run tools/kor/build.sh first).
 
-    python3 tools/kor/package.py 0.3-ko1
+    python3 tools/kor/package.py 0.3-kor
 
 Writes build/kor/MHGU-Utility-KO-<version>.zip. Holds no game text and nothing of the Korean patches: those are read
 from the player's own files at run time.
@@ -10,7 +10,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-version = sys.argv[1] if len(sys.argv) > 1 else '0.3-ko1'
+version = sys.argv[1] if len(sys.argv) > 1 else '0.3-kor'
 nro = ROOT / 'build' / 'hunters_compendium.nro'
 if not nro.is_file():
     sys.exit('no build/hunters_compendium.nro: run bash tools/kor/build.sh first')
