@@ -1,193 +1,91 @@
-# MHGU Utility
+# MHGU Utility 한글판 (MHXX Recomp용)
 
-A standalone Forge plugin for MHGURecomp 0.15.4 or later and MHGU 1.4.0. Browse items, weapon
-upgrade trees, armor pieces and sets, crafting materials, gathering and monster
-reward sources, and a persistent wishlist.
-The game continues while the browser is open. Armor details include a native
-full-set model preview using installed texture replacements. Right stick rotates
-the preview; equipped armor and stats stay unchanged.
+[Rikiar73574님의 MHGU Utility (Hunter's Compendium)](https://github.com/Rikiar73574/mhgu-utility)를 **[MHXX Recomp](https://github.com/SDK1175/MHXXRecomp)(몬스터헌터 더블크로스 일어판 PC 포팅) + 덥크 한글 패치**에서 한글로 쓰도록 고친 비공식 한글판입니다. 원작은 MIT 라이선스이며, 기능은 원작 그대로입니다.
 
-[Download the release](https://github.com/Rikiar73574/mhgu-utility/releases/latest)
+- 영미판(MHGU)이나 MHGU Recomp에서 영어로 쓰실 분은 [원작](https://github.com/Rikiar73574/mhgu-utility/releases)을 받으세요. 원작 설명은 [docs/README.upstream.md](docs/README.upstream.md)에 그대로 있습니다.
+- 이 한글판의 문제는 원작자가 아니라 [이 저장소의 이슈](https://github.com/SDK1175/mhgu-utility-kor/issues)나 [MHXX Recomp 이슈](https://github.com/SDK1175/MHXXRecomp/issues)로 알려 주세요.
 
+[받기 (릴리즈)](https://github.com/SDK1175/mhgu-utility-kor/releases/latest)
 
-[Build from source](docs/BUILD.md)
+## 무엇을 하나
 
-[Screenshots](docs/SCREENSHOTS.md)
+게임을 하면서 아이템, 무기 강화 트리, 방어구, 생산 소재, 채집·몬스터 입수처를 찾아보고, 위시리스트로 모을 소재를 관리합니다.
 
-## Features
+- **아이템:** 분류별 검색, 설명, 맵·몬스터·퀘스트별 입수처(랭크, 수량, 확률, 부위파괴·포획 조건)
+- **무기 트리:** 무기 종류별 강화 트리, 성능, 예리도, 생산 소재
+- **방어구:** 세트·부위별, 랭크·헌터 타입·성별 필터, 방어력·내성·슬롯·스킬·소재
+- **위시리스트:** 무기·방어구를 담아 두면 아이템 상자와 포치의 **실제 보유 수량**으로 모자란 소재를 보여 주고, 퀘스트 중에는 작은 추적 창으로 표시
+- **퀘스트 추천:** 위시리스트 소재를 모을 수 있는, 열려 있는 퀘스트를 추천
+- **스킬 조합(Set Builder):** 원하는 스킬로 방어구 조합 검색. 캐릭터의 성별·헌터 타입·무기 슬롯·HR을 게임에서 읽고, 가진 호석을 모두 확인
+- **채집 지도:** 퀘스트 중 고른 아이템이 나오는 채집 포인트를 지도에 표시 (Map Assist와 같이 쓸 수 있음)
 
-- **Item browser:** searchable categories, item icons, descriptions, and acquisition
-  sources grouped by map, monster or quest. Sources show rank, quantities, drop
-  rates, and carve, capture or break conditions where available.
-- **Weapon trees:** connected upgrade trees for each weapon type, rarity ordering,
-  weapon stats, sharpness, crafting recipes, and clickable material sources.
-- **Armor browser:** browse sets or individual pieces; filter by rank, hunter type
-  and gender; distinguish Blademaster and Gunner entries; inspect defense, resistances, slots, skills and crafting materials.
-- **Armor previews:** rotating native full-set models using the game's assets and
-  installed texture replacements, where a reliable model mapping is available.
-- **Weapon and armor wishlists:** save individual recipes or complete armor sets,
-  inspect materials directly, and remove entries from the wishlist. Supported
-  weapon-upgrade screens also provide an in-game wishlist shortcut.
-- **Live material counts:** combine item-box and pouch stock, update shortages as
-  items are gathered, and keep a compact passive wishlist tracker visible in hunts.
-- **Quest planning:** suggest eligible unlocked quests covering wanted materials
-  through gathering, monster drops and rewards. Prowler quests are excluded by
-  default and can be enabled in settings.
-- **Location browser:** map artwork and minimaps, a shared LR/HR/GR selector, and
-  gathering items grouped by area and gathering type.
-- **Gathering map filters:** native Start-menu entry, category and item checkboxes,
-  drop-rate ranges, and matching gathering-point markers across the quest map.
-  Grey and gold mining spots use distinct native pickaxe icons. Markers stay at
-  their map positions and work alongside Map Assist.
-- **Controller, mouse and keyboard:** MHGU-style frames and lettering, controller
-  navigation, direct keyboard search, text editing and clipboard shortcuts, plus
-  an optional on-screen controller keyboard and adjustable interface size.
-- **Standalone operation:** no HuntLog backend, browser or external service is
-  required during gameplay. Wishlist and settings persist in separate files.
+## 한글판에서 바뀐 것
 
-### Set Builder
+- 메뉴·라벨·안내 문구, 스킬 설명 한글 번역
+- **아이템·스킬·퀘스트 이름:** 깔려 있는 **덥크 한글 패치**에서 게임 실행 중에 읽어 옵니다. 이 플러그인에는 한글 패치 내용이 들어 있지 않습니다.
+- **무기·방어구 이름:** 덥크 한글 패치는 이 이름들을 일본어로 두었습니다. 영미판(MHGU) 한글 패치를 가지고 있다면 그 table 파일을 넣어 한글로 볼 수 있습니다 (아래 "설치" 3번). 없으면 무기·방어구 이름만 영어로 나옵니다.
+- **한글 검색:** 한/영 키 또는 오른쪽 Alt로 한글 입력, 초성 검색(예: ㄹㅇㅅ), 가나다 정렬
+- **덥크에 맞춘 부분:** 캐릭터·인벤토리·채집 지도 등 게임 데이터를 덥크 위치에서 읽음, 빠르게 쳐도 순서대로 들어가는 검색 입력, F1에서 바꾼 패드 버튼 배치를 따르는 버튼 표시
 
-Set Builder provides skill-based armor searches, automatic character settings, every owned charm,
-per-piece decoration placements, and an action to wishlist missing armor.
-Missing crafting stock does not exclude armor. Verified availability is preferred
-between builds with equal skill strength; unconfirmed unlocks remain explicitly
-labelled. Every result gets a bounded jewel-refinement pass that tries single placements,
-swaps and multi-jewel bundles, including sets
-that already meet the requested skills. Results always rank by most positive
-activated skills first; there is no sort setting. Refinement preserves requested
-skills and does not add penalties. Empty slots can remain when no useful
-placement is found within the search budget. Searches keep improving a pool of up to 24 best-found builds; a bounded work
-budget pauses the search, and Y resumes. Bonus skills, penalties, slot usage
-and per-piece gem placement are shown. Mixed-set model previews are not included yet.
+## 필요한 것
 
-| Select desired skills | Suggested build |
-| --- | --- |
-| ![Set Builder preview skill selection](docs/screenshots/current/set-builder-skills.webp) | ![Set Builder preview showing armor, an owned charm and the wishlist action](docs/screenshots/current/set-builder-results.webp) |
+- **MHXX Recomp 0.10.8 이상** (플러그인 마우스·키보드 입력, 영문판 주소 변환이 들어 있습니다)
+- 덥크 한글 패치 (게임 이름을 한글로 보려면)
+- 선택: 영미판(MHGU) 한글 패치의 table 파일 (무기·방어구 이름)
 
-## Controls and details
+## 설치
 
-Item sources include all monster drops and quest rewards available in the local
-MHGenDatabase, with LR/HR/GR, carve/capture/break conditions, reward slots,
-quantities and rates. Items can list both monster drops and quest rewards.
-[Source coverage](docs/source-coverage.md) records 2,840 acquisition pages,
-41 internal game entries and 25 explicit data gaps; sources are never guessed.
+1. 게임을 종료합니다.
+2. `MHGU-Utility-KO-<버전>-kor.zip`의 압축을 풀어, 안의 `hunters-compendium` 폴더를 MHXX Recomp의 `mods` 폴더에 넣습니다. 원작 영어판이 있으면 지우고 넣으세요.
+3. (선택) 영미판 한글 패치를 가지고 있다면, 그 안의 `romfs\nativeNX\eng\table\` 폴더의 `.gmd` 파일들을
+   `mods\hunters-compendium\romfs\nativeNX\plugins\hunters-compendium-ko\table\`에 복사합니다.
+   **주의:** 모드 폴더 안에 `nativeNX\eng` 폴더를 만들면 게임이 켜지지 않습니다. 꼭 위 경로에 넣으세요.
+4. 게임을 켭니다.
 
-- Start + D-pad Left opens or closes MHGU Utility; F6 is the keyboard shortcut.
-- During a quest, open **MHGU Utility** on page two of the native Start menu,
-  or use Start + Left / F6, to filter gathering points. Category and individual
-  item checkboxes list this quest map's drops and their chances. Ranges mean
-  different spots have different odds; quantities do not multiply those odds.
-  Nothing is selected initially. Close the checklist to keep playing with only
-  matching spots marked across the whole map. Depleted or inactive points
-  disappear. Map Assist keeps its own monster markers; these icons need no KatLib.
-  The two mining-point types use grey and gold native pickaxe icons. Markers
-  retain their actual native map positions, including overlaps. Player and
-  monster markers do not reposition them.
-- The dedicated **Set Builder** sidebar section searches for up to six requested activated skills using
-  your character's gender, hunter type, equipped weapon slots and progression.
-  It includes unowned armor without requiring crafting stock, and checks every
-  owned charm. Requested skills are minimums, so higher tiers remain eligible.
-  Spare slots are refined for bonus skills using available decorations, without
-  breaking the requested skills. This bounded search does not guarantee the best
-  possible combination. Choose skills with B, then Y to search or pause.
-  L3 (F10 on keyboard) explains the highlighted skill in the picker and opens
-  All skills from build results. Active skills include numeric effect captions;
-  B (Enter) in All skills opens the full effect, with D-pad scrolling and
-  A (Escape) to return. The summary shows bonus skills,
-  penalties and inactive skill-point totals; slot icons and decoration placements
-  show how armor, charm and weapon slots are used. Left/Right selects
-  a build; Up/Down selects a piece or its decoration placements. R3 adds missing
-  armor pieces to the wishlist. A goes back.
-  Verified equipment is tried first. Results with incomplete acquisition-source coverage are explicitly marked
-  **availability unverified**; these may include armor whose unlock cannot yet be confirmed. Unindexed acquisition paths are never treated as proof that armor is locked. The search keeps the best 24 builds found and continues improving their fit,
-  preferring fewer wasted skill points, fewer gem slots used and more free slots.
-  It pauses at a bounded work budget; Y continues. These are best-found results,
-  not a claim of global optimality. Full mixed-set
-  previews are not yet part of the builder.
-- Xbox B selects; Xbox A goes back. LB/RB changes section. Game buttons and
-  movement are blocked while the interactive utility is open, including when
-  another Forge mod supplies controller state. Closing restores normal input;
-  the passive HUD leaves gameplay controls available.
-- MHGURecomp 0.15.4 or later keeps the mouse free while browsing. Clicking the
-  Compendium does not capture it; Escape retains the game's mouse-release shortcut.
-  The passive hunt tracker leaves mouse-look controls unchanged.
-- X opens a compact QWERTY controller keyboard with live matches and clickable keys.
-  Type directly on a physical keyboard to search inline, without opening that
-  keyboard. Selection, caret movement, cut/copy/paste and UTF-8-safe deletion are
-  supported; Up/Down immediately browses search results while Left/Right edits
-  the caret. Hints follow the active device. Searches stay within the selected
-  weapon type. Interface size can be
-  adjusted in the Forge settings.
-- Weapon families and sibling branches are ordered by rarity. LT/RT jumps between
-  families; Up/Down stays in the same tree column.
-- Armor can be browsed by set or equipment slot, with rank, hunter-type and gender filters. Y changes hunter type, L3 gender
-  and LT/RT rank; keyboard equivalents are shown on screen. Its details show defense, resistances,
-  skill points, crafting materials and the other pieces in the same set. Opening
-  a set shows combined defense, resistances, slots and skill activations; the
-  Full set / piece tabs switch between the overview and individual equipment.
-  Models require a reliable mapping to the owned game dump; unmapped sets show
-  an unavailable message. No models or textures are embedded in the plugin.
-- R3 adds or removes a weapon or armor recipe from the wishlist, including supported
-  native weapon-smithy upgrade screens. Y adds the complete armor set, preserving
-  pieces already saved.
-- In Wishlist, R3 removes the selected recipe; its Remove action also works with
-  the mouse. Up/Down still selects materials, and removal is always manual.
-- Forge settings has a persistent **Include Prowler quests** toggle, off by default.
-  Changing it immediately refreshes an open quest route. Settings are stored in
-  `compendium_settings.ini`, separately from the wishlist.
-- In Wishlist, Y opens a suggested route through eligible unlocked quests. It
-  combines gathering areas, stable monsters and quest rewards, using both the
-  game's unlock and entry-condition checks. Downloaded event quests still need
-  to meet their HR requirements. At equal material coverage, hunts targeting the needed monster rank above
-  incidental encounters, before rank/star tie-breaks. Named material quantities use shared demand
-  minus combined box/pouch stock. Material-point recipes use a shared whole-item stock allocation and show
-  eligible alternatives. The suggested allocation is conservative; it does not
-  calculate an optimal shortage or expected quest runs. Drop quantities are not guaranteed.
-- Material rows open their acquisition sources. The wishlist reads box and
-  physical pouch inventory and stores its own `compendium_wishlist.txt` file.
+```text
+mods/
+└── hunters-compendium/
+    └── romfs/
+        └── nativeNX/
+            └── plugins/
+                ├── hunters_compendium.nro
+                └── hunters-compendium-ko/
+                    └── table/            (선택: 영미판 한글 패치의 table .gmd)
+```
 
-Install one `hunters_compendium.nro` at
-`romfs/nativeNX/plugins/hunters_compendium.nro` inside its mod folder, enable the
-folder in Recomp, and restart. Keep the original game saves backed up.
+## 사용 방법
 
-This source includes the smithy hook compatibility change used with the
-standalone Armor Fusion plugin. The earlier patched build passed both
-load orders. This standalone build passed the complete installed mod stack on
-Linux with stock MHGURecomp commit `a272b61`, using copied saves. See the
-[validation records](docs/validation.md) and [UX validation](docs/ux-validation.md) for the exact artifact and coverage. All plugins share
-Recomp's 12 MiB plugin memory region, including their BSS and loader alignment.
+- **열기/닫기:** 키보드 **F6**, 패드 **Start + 십자키 왼쪽**
+- **검색:** 키보드로 바로 치면 됩니다. 한/영 키(또는 오른쪽 Alt)로 한글 입력을 켜고 끕니다.
+- **스킬 조합:** 마을에서 캐릭터를 불러온 뒤 쓰세요. 스킬을 고르고 검색하면 조합이 나옵니다.
+- **위시리스트 → 퀘스트 추천:** 위시리스트에서 Y(키보드 F9)
+- **채집 지도:** 퀘스트 중에 열어서 아이템을 고르면, 창을 닫은 뒤에도 지도에 그 채집 포인트가 표시됩니다.
+- 퀘스트 중 시작 메뉴의 "MHGU Utility" 항목은 덥크에서 아직 확인 중입니다. F6이나 Start + 왼쪽을 쓰세요.
+- 화면 크기, 오트모 퀘스트 포함 여부: Insert → Forge 설정 → `Plugin UI` → `MHGU Utility`
 
-See [build instructions](docs/BUILD.md), [source provenance](THIRD_PARTY_NOTICES.md),
-and the research notes under `docs/`.
+## 저장 데이터
 
-Game-derived metadata, minimaps, cached illustrations and weapon renders are
-local build inputs. They are not included in this source repository. The
-renderer and generation paths are retained; supplying the same local generated
-modules preserves the existing full UI. No HuntLog plugin or backend is needed
-at runtime or to compile this standalone tree.
+설정(`compendium_settings.ini`)과 위시리스트(`compendium_wishlist.txt`)는 게임의 세이브 폴더에 따로 저장됩니다. MHXX Recomp의 기본 경로는 `%APPDATA%\MHXXRecomp\save\save_0\`입니다. 플러그인을 업데이트해도 지워지지 않습니다.
 
-## Screenshots
+## 버전
 
-Actual in-game captures from 20 November 2026. Click an image for full size.
-[Full gallery and capture details](docs/SCREENSHOTS.md).
+원작 버전 뒤에 `-kor`를 붙입니다 (예: 원작 0.3 → `0.3-kor`).
 
-| Item browser | Weapon tree |
-| --- | --- |
-| ![Current item browser with game-style frames](docs/screenshots/current/items.webp) | ![Connected Lance upgrade tree](docs/screenshots/current/weapon-tree.webp) |
+## 빌드 (개발자용)
 
-| Material sources | Wishlist and live stock |
-| --- | --- |
-| ![Item sources grouped by map with rank and drop rates](docs/screenshots/current/item-sources.webp) | ![Armor wishlist showing owned, needed and total materials](docs/screenshots/current/wishlist.webp) |
+MSYS2(UCRT64), Rust nightly, Python 3가 필요합니다. 생성 데이터(아이템·무기 표 등)는 저장소에 들어 있지 않아서, 빌드할 때 **본인이 가진 MHGU 1.4.0 게임 파일**을 입력으로 씁니다 (원작과 같은 방식, [docs/BUILD.md](docs/BUILD.md)). 경로는 `tools/kor/build.sh` 위쪽에서 바꿉니다.
 
-| Location browser | In-quest gathering filters |
-| --- | --- |
-| ![Locations with map previews and a shared rank selector](docs/screenshots/current/locations.webp) | ![Mining checklist with item selection and gathering chances](docs/screenshots/current/gathering-filters.webp) |
+```bash
+bash tools/kor/setup.sh <MHGU 1.4.0 romfs가 있는 폴더>   # 처음 한 번 (느림)
+bash tools/kor/build.sh                                  # 빌드하고 MHXX Recomp mods 폴더에 넣기
+python3 tools/kor/package.py 0.3-kor                     # 배포용 zip (build/kor/)
+```
 
-## Naming acknowledgement
+`package.py`는 플러그인 안에 PC 사용자 이름이나 폴더 경로가 남아 있으면 zip을 만들지 않고 멈춥니다.
 
-Ghostryx117’s MHGU Compendium is a separate project whose name predates this
-project and inspired its former name. This project is now called MHGU Utility
-to avoid confusion. See [the naming discussion](https://github.com/Rikiar73574/mhgu-utility/issues/4).
+## 라이선스
 
-The existing plugin, archive and saved-data filenames remain unchanged for
-compatibility with installed mods, wishlists and settings.
+MIT License (원작: Copyright (c) 2026 Riccardo Testa). `LICENSE`, `THIRD_PARTY_NOTICES.md`, `RUNTIME_NOTICES.md`, `licenses/`를 참고하세요.
+한글 글꼴: [Paperlogy](https://github.com/Freesentation/paperlogy) (PT&, 이주임), SIL Open Font License 1.1.
+
+Monster Hunter는 CAPCOM의 상표이며, 이 프로젝트는 CAPCOM과 관계없습니다.
