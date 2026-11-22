@@ -4,7 +4,9 @@
 // or GU itself: 0, the address stays GU's).
 #[cfg(not(test))]unsafe extern "C"{fn mhxx_gu_data(offset:u32)->u32;}
 fn gd(b:u32,off:u32)->u32{#[cfg(not(test))]{let a=unsafe{mhxx_gu_data(off)};if a!=0{return a;}}b.wrapping_add(off)}
-use core::{mem,ptr,sync::atomic::{AtomicBool,Ordering}};
+use core::{mem,ptr,sync::atomic::{AtomicBool,AtomicU32,Ordering}};
+use forge::log::prelude::info;
+static SEEN:AtomicU32=AtomicU32::new(0); // (the first menus' layouts, logged: MHXX's menu is not GU's)
 const STOCK:u32=13;
 const TOTAL:u32=14;
 const VTABLE:u32=0x177aeb8;
@@ -25,6 +27,7 @@ pub fn take_open()->bool{compendium_start_take_open()}
 #[unsafe(no_mangle)]pub extern "C" fn compendium_start_take_open()->bool{OPEN.swap(false,Ordering::AcqRel)}
 #[unsafe(no_mangle)]pub unsafe extern "C" fn compendium_start_ctor(p:u32)->u32{unsafe{
  let original:unsafe extern "C" fn(u32)->u32=mem::transmute(ORIGINAL[0]);let result=original(p);
+ if SEEN.fetch_add(1,Ordering::Relaxed)<4{info!("Start menu: object {} (vtable {:#x}), rows {} / hints {} (GU: {STOCK})",object(p),if valid(p){read(p,0)}else{0},if valid(p){read(p,0xac)}else{0},if valid(p){read(p,0xc4)}else{0});}
  if !object(p)||read(p,0xac)!=STOCK||read(p,0xc4)!=STOCK{return result;}
  let old_rows=read(p,0xa8);let old_hints=read(p,0xc0);
  if !valid(old_rows)||!valid(old_hints){return result;}
@@ -74,10 +77,11 @@ pub fn install(){unsafe{
  let base=forge::mem::text_addr();
  let entries=[(0x677b48,0xe92d48f0,compendium_start_ctor as *const ()as u32),(0x677d0c,0xe92d47f0,compendium_start_init as *const ()as u32),(0x678e80,0xe92d4bf0,compendium_start_fill as *const ()as u32),(0x677ee0,0xe92d4830,compendium_start_action as *const ()as u32)];
  // Refuse foreign hooks or another game version before installing any hook.
- if entries.iter().any(|&(at,word,_)|ptr::read_unaligned((base+at)as *const u32)!=word){return;}
+ if let Some(&(at,word,_))=entries.iter().find(|&&(at,word,_)|ptr::read_unaligned((base+at)as *const u32)!=word){info!("Start menu: no entry (main+{at:#x} is {:#x}, GU 1.4.0's {word:#x})",ptr::read_unaligned((base+at)as *const u32));return;}
  // Static leaf routines and allocator layout are part of this compatibility gate.
- if read(base+0x54ee34,0)!=0xe1c011b4||read(base+0x54f9f0,0)!=0xe12fff1e||read(base+0x7aa47c,0)!=0xe59f1010{return;}
+ if read(base+0x54ee34,0)!=0xe1c011b4||read(base+0x54f9f0,0)!=0xe12fff1e||read(base+0x7aa47c,0)!=0xe59f1010{info!("Start menu: no entry (its helper routines differ from GU 1.4.0's)");return;}
  // Install the allocating constructor last. A failed dependency leaves every
  // stock object untouched; already-installed callbacks only pass it through.
- for i in [1,2,3,0]{let(at,_,detour)=entries[i];if create(&raw mut HOOKS[i],base+at,detour,&raw mut ORIGINAL[i]).is_null()||ORIGINAL[i]==0{return;}}
+ for i in [1,2,3,0]{let(at,_,detour)=entries[i];if create(&raw mut HOOKS[i],base+at,detour,&raw mut ORIGINAL[i]).is_null()||ORIGINAL[i]==0{info!("Start menu: no entry (hook {i} failed)");return;}}
+ info!("Start menu: hooks in");
 }}
