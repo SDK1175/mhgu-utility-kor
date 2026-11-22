@@ -44,6 +44,18 @@ MHXX Recomp(덥크 PC 포팅) 0.10.8 이상에서 쓰도록 만든 한글판입�
 Paperlogy (PT&, 이주임), SIL Open Font License 1.1 - Paperlogy-OFL.txt
 """
 
+# Nothing of the builder's PC in a file for others: user name, home or project folders (build paths in panics)
+import os
+data = nro.read_bytes()
+marks = [b'\\Users\\', b'/Users/', b'/home/', b'C:/Users', str(ROOT).encode(), ROOT.as_posix().encode()]
+for v in ('USERNAME', 'USER'):
+    if os.environ.get(v):
+        marks.append(os.environ[v].encode())
+found = sorted({m.decode('utf-8', 'replace') for m in marks if len(m) > 2 and m in data})
+if found:
+    sys.exit(f'STOP: the plugin holds paths of this PC ({len(found)} kind(s)); not packaged. '
+             'Pull the latest code, build again (bash tools/kor/build.sh), then package.')
+
 out = ROOT / 'build' / 'kor' / f'MHGU-Utility-KO-{version}.zip'
 out.parent.mkdir(parents=True, exist_ok=True)
 base = 'hunters-compendium/romfs/nativeNX/plugins/'
