@@ -33,13 +33,15 @@ pub fn take_open()->bool{compendium_start_take_open()}
  if !valid(old_rows)||!valid(old_hints){return result;}
  // Exact allocator used by both vectors in 0x877b48 and freed by 0x86e3ac.
  let heap_for:unsafe extern "C" fn(u32)->u32=mem::transmute(forge::mem::text_addr()+0x7aa47c);
- let heap=heap_for(gd(forge::mem::text_addr(),0x191eb18));if !valid(heap){return result;}
+ let heap=heap_for(gd(forge::mem::text_addr(),0x191eb18));if !valid(heap){info!("Start menu: no entry (heap {heap:#x})");return result;}
  // Heap objects are in the heap; their relocated vtables are in main's data
  // segment, below 0x08000000 when main loads at its real 0x00200000 base.
  let base=forge::mem::text_addr();let table=read(heap,0);
- if table&3!=0||!((base+0x172f000..=base+0x184ad78-0x38).contains(&table)||(0x0020_0000..0x0240_0000).contains(&table)){return result;}
+ if table&3!=0||!((base+0x172f000..=base+0x184ad78-0x38).contains(&table)||(0x0020_0000..0x0240_0000).contains(&table)){info!("Start menu: no entry (heap table {table:#x})");return result;}
  let allocate=read(table,0x1c);let release=read(table,0x34);
- if [allocate,release].iter().any(|&f|f&3!=0||!(base..base+0x13f1dec).contains(&f)){return result;}
+ // (MHXX Recomp: the game's own function pointers are MHXX's, at its real 0x00200000 base, not in GU's view at base)
+ if [allocate,release].iter().any(|&f|f&3!=0||!((base..base+0x13f1dec).contains(&f)||(0x0020_0000..0x0160_0000).contains(&f))){
+  info!("Start menu: no entry (heap functions {allocate:#x} / {release:#x})");return result;}
  let alloc:unsafe extern "C" fn(u32,u32,u32)->u32=mem::transmute(allocate);
  let free:unsafe extern "C" fn(u32,u32)=mem::transmute(release);
  // Allocate both before publishing either. Allocation failure leaves stock intact.
